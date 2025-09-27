@@ -26,6 +26,7 @@ import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
 
 import frc.robot.commands.swerve.*;
 import frc.robot.constants.*;
+import static frc.robot.constants.IDConstants.*;
 import static frc.robot.constants.FieldConstants.*;
 import static frc.robot.constants.FieldConstants.GeoFencing.*;
 import frc.robot.subsystems.*;
@@ -65,8 +66,8 @@ public class Robot extends TimedRobot
         s_Swerve.addVisionMeasurement(poseEst, timestmp);
       },
       () -> Pair.of(s_Swerve.getPigeon2().getYaw().getValueAsDouble(), swerveState.Speeds.omegaRadiansPerSecond), 
-      new Limelight("limelight-fore"), 
-      new Limelight("limelight-aft")
+      new Limelight(foreLimelightName), 
+      new Limelight(aftLimelightName)
     );
 
   /* Controllers */

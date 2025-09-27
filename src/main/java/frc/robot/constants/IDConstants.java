@@ -33,6 +33,11 @@ public final class IDConstants
   public static final int coralRollerID = 13;
   public static final int coralSensorDIO = 0;
 
-  public static final int AlgaeRollerID = 14;
-  public static final int AlgaeSensorDIO = 1;
+  public static final int algaeRollerID = 14;
+  public static final int algaeSensorDIO = 1;
+
+  /* Limelights */
+  /* __________ */
+  public static final String foreLimelightName = "limelight-fore";
+  public static final String aftLimelightName = "limelight-aft";
 }
