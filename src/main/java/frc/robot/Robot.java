@@ -113,6 +113,7 @@ public class Robot extends TimedRobot
         robotRadiusInscribed
       );
     FieldObject.setRobotPosSup(swerveState.Pose::getTranslation);
+    GeoFencing.fieldGeoFence.setActiveCondition(SD.FENCE_TOGGLE::get);
 
     /* Bindings */
     bindControls();

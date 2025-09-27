@@ -23,6 +23,8 @@ public class SD
   public static final BooleanKey LL_EXPOSURE_DOWN = new BooleanKey("Decrease Exposure", false);
   public static final BooleanKey LL_TOGGLE        = new BooleanKey("Use Limelight", true);
 
+  public static final BooleanKey FENCE_TOGGLE     = new BooleanKey("Enable Fencing", true);
+
   public static final StringKey  STATE_HEADING    = new StringKey("Heading State", "");
   public static final StringKey  STATE_DRIVE      = new StringKey("Drive State", "Disabled");
 
