@@ -8,6 +8,7 @@ import edu.wpi.first.epilogue.Epilogue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.Pair;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
@@ -90,6 +91,7 @@ public class Robot extends TimedRobot
   {
     /* State Initialisation */
     currentDriveState = DriveState.None;
+    currentTarget = TargetPosition.None;
     updateSwerveState();
     
     /* Telemetry and SD */
@@ -112,7 +114,7 @@ public class Robot extends TimedRobot
         robotRadiusCircumscribed : 
         robotRadiusInscribed
       );
-    FieldObject.setRobotPosSup(swerveState.Pose::getTranslation);
+    FieldObject.setRobotPosSup(this::getTranslation);
     GeoFencing.fieldGeoFence.setActiveCondition(SD.FENCE_TOGGLE::get);
 
     /* Bindings */
@@ -224,6 +226,9 @@ public class Robot extends TimedRobot
     swerveState = s_Swerve.getState();
     field.setRobotPose(swerveState.Pose);
   }
+
+  /** Returns the t2d of the robot centre in field coordinates */
+  public Translation2d getTranslation() {return swerveState.Pose.getTranslation();}
   
   /* Opmode Methods */
   @Override
@@ -231,6 +236,15 @@ public class Robot extends TimedRobot
   {
     updateSwerveState();
     CommandScheduler.getInstance().run();
+  }
+
+  @Override
+  public void disabledInit()
+  {
+    if (getTranslation().equals(Translation2d.kZero))
+    {
+      s_Swerve.resetPose(FieldUtils.isRedAlliance() ? FieldConstants.redStartLine : FieldConstants.blueStartLine);
+    }
   }
 
   @Override
