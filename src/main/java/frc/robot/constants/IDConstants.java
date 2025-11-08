@@ -40,4 +40,8 @@ public final class IDConstants
   /* __________ */
   public static final String foreLimelightName = "limelight-fore";
   public static final String aftLimelightName = "limelight-aft";
+
+  /* Misc */
+  /* ==== */
+  public static final int ledPort = 1;
 }
