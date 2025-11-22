@@ -7,6 +7,7 @@ import java.util.function.Function;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import edu.wpi.first.math.Pair;
 import edu.wpi.first.wpilibj.Filesystem;
 import frc.robot.util.controlTransmutation.geoFence.Box;
 import frc.robot.util.controlTransmutation.geoFence.Fence;
@@ -15,7 +16,7 @@ import frc.robot.util.controlTransmutation.geoFence.Point;
 import frc.robot.util.controlTransmutation.geoFence.Polygon;
 
 public class GeoFenceLoader {
-  public static ObjectLists load() {
+  public static Objects load() {
     var resourceDir = Filesystem.getDeployDirectory().getPath();
 
     String contents;
@@ -27,19 +28,39 @@ public class GeoFenceLoader {
 
     var json = new JSONObject(contents);
 
-    Function<String, ObjectList> getList = (name) -> parseObjectList(json.getJSONArray(name));
+    var fieldJson = json.getJSONObject("field");
+    var field = new Fence(
+      fieldJson.getFloat("xA"), 
+      fieldJson.getFloat("yA"), 
+      fieldJson.getFloat("xB"), 
+      fieldJson.getFloat("yB"),
+      fieldJson.getFloat("radius"), 
+      fieldJson.getFloat("buffer")
+    );
 
-    return new ObjectLists(getList.apply("blueField"), getList.apply("redField"), getList.apply("sharedField"));
+    var objectLists = parseObjectLists(json.getJSONArray("objects"));
+
+    return new Objects(field, objectLists.getFirst(), objectLists.getSecond());
   }
 
-  private static ObjectList parseObjectList(JSONArray json) {
-    var objects = new ObjectList();
+  private static Pair<ObjectList, ObjectList> parseObjectLists(JSONArray json) {
+    var blueObjects = new ObjectList();
+    var redObjects = new ObjectList();
 
     for (Object object : json) 
       if (object instanceof JSONObject jsonObject) 
-        parseFieldObject(jsonObject).ifPresent(objects::add);
+        parseFieldObject(jsonObject).ifPresent(fieldObject -> {
+          switch (jsonObject.getString("alliance")) {
+            case "blue": blueObjects.add(fieldObject);
+            case "red": redObjects.add(fieldObject);
+            case "both": 
+              blueObjects.add(fieldObject);
+              redObjects.add(fieldObject);
+              break;
+          }
+        });
 
-    return objects;
+    return Pair.of(blueObjects, redObjects);
   }
 
   private static Optional<FieldObject> parseFieldObject(JSONObject json) {
@@ -86,5 +107,5 @@ public class GeoFenceLoader {
     };
   }
 
-  record ObjectLists(ObjectList blueField, ObjectList redField, ObjectList sharedField) {}
+  record Objects(Fence field, ObjectList blueField, ObjectList redField) {}
 }

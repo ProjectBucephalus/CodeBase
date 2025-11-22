@@ -1,13 +1,31 @@
 {
-  "blueField": [
+  "field": {
+    "type": "fence",
+    "xA": 0.0,
+    "yA": 0.0,
+    "xB": 17.548,
+    "yB": 8.051,
+    "radius": 0.05,
+    "buffer": 0.5
+  },
+  "objects": [
     {
+      "alliance": "both",
       "type": "point",
       "x": 1.0,
       "y": 1.0,
       "radius": 1.0,
       "buffer": 0.25
+    },
+    {
+      "alliance": "red",
+      "type": "polygon",
+      "x": 5.0,
+      "y": 1.0,
+      "radius": 2.0,
+      "buffer": 0.0,
+      "theta": 0.0,
+      "sides": 6
     }
-  ],
-  "redField": [],
-  "sharedField": []
+  ]
 }
