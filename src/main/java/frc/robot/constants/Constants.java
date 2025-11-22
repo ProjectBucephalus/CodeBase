@@ -73,6 +73,21 @@ public final class Constants
     public static final double reverseSpeed = 0.15;
   }
 
+  public static final class Shooter
+  {
+    public static final double speed = 1.0;
+
+    public static final double slot0S = 0.0;
+    public static final double slot0V = 0.0;
+    public static final double slot0A = 0.0;
+    public static final double slot0P = 0.0;
+    public static final double slot0I = 0.0;
+    public static final double slot0D = 0.0;
+
+    public static final double velocity = 0.0;
+    public static final double acceleration = 0.0;
+  }
+
   public static final class Vision
   {
     /* public static final int[] validIDs = 

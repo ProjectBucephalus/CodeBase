@@ -36,6 +36,8 @@ public final class IDConstants
   public static final int algaeRollerID = 14;
   public static final int algaeSensorDIO = 1;
 
+  public static final int shooterID = 0;
+
   /* Limelights */
   /* __________ */
   public static final String foreLimelightName = "limelight-fore";
