@@ -59,7 +59,11 @@ public class Attractor extends FieldObject
       checkAngle(controlInput)
     )
     {
+      if (!controlInput.equals(Translation2d.kZero))
+    {
       lastInputAngle = controlInput.getAngle();
+      
+    }
 
       if (distance <= buffer)
       {
@@ -89,6 +93,11 @@ public class Attractor extends FieldObject
    */
   public boolean checkAngle(Translation2d controlInput)
   {
+    if (controlInput.equals(Translation2d.kZero))
+    {
+      return false;
+    }
+    
     if 
     (
       !lastInputAngle.equals(Rotation2d.kZero) && 

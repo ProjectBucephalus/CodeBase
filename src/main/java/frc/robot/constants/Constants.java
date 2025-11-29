@@ -86,6 +86,14 @@ public final class Constants
 
     public static final double velocity = 0.0;
     public static final double acceleration = 0.0;
+
+    public static final double idleSpeed = 0.0;
+    public static final double revSpeed = 0.0;
+    public static final double leliency = 0.0;
+
+    //simulation
+    public static final double kGearRatio = 10.0;
+    public static final double kMOI = 0.001; 
   }
 
   public static final class Vision
