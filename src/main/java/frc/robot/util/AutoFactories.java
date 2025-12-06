@@ -1,7 +1,5 @@
 package frc.robot.util;
 
-import java.util.ArrayList;
-
 import java.util.function.Supplier;
 
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
@@ -31,8 +29,8 @@ public class AutoFactories
   {
     // Removes all whitespace characters from the single-String command phrases, ensures it's all lowercase, and then splits it into individual strings, which are stored in an array
     String[] splitCommands = commandInput.replaceAll("//s", "").toLowerCase().split(",");
-    // The arraylist that all the commands will be placed into
-    ArrayList<Command> commandList = new ArrayList<>();
+    // The commands produced to be run
+    SequentialCommandGroup commandList = new SequentialCommandGroup();
 
     // For each command phrase, adds the associated path and then the associated command to the command list
     for (String splitCommand : splitCommands) 
@@ -43,44 +41,44 @@ public class AutoFactories
 				{
           int seperatorIndex = splitCommand.indexOf(":");
           
-          Translation2d posTarget = 
-          new Translation2d
+          Translation2d posTarget = new Translation2d
           (
             MathUtil.clamp(Double.parseDouble(splitCommand.substring(1, seperatorIndex)), 0.5, (FieldConstants.fieldCentre.getX()) - 0.5), 
             MathUtil.clamp(Double.parseDouble(splitCommand.substring(seperatorIndex + 1)), 0.5, FieldConstants.fieldWidth - 0.5)
           );
 
           Rotation2d rotationTarget = 
-          splitCommand.contains(";") ? 
-          new Rotation2d(Units.degreesToRadians(Double.parseDouble(splitCommand.substring(splitCommand.indexOf(";"))))) : 
-          swerveStateSup.get().Pose.getRotation().plus(Rotation2d.k180deg);
+            splitCommand.contains(";") ? 
+            new Rotation2d(Units.degreesToRadians(Double.parseDouble(splitCommand.substring(splitCommand.indexOf(";"))))) : 
+            swerveStateSup.get().Pose.getRotation().plus(Rotation2d.k180deg);
           
-          commandList.add(s_Swerve.poseDriveCommand(new AlliancePose2dSup(posTarget, rotationTarget), swerveStateSup));
+          commandList.addCommands(s_Swerve.poseDriveCommand(new AlliancePose2dSup(posTarget, rotationTarget), swerveStateSup));
         }
 
-        case 'w' -> commandList.add(Commands.waitSeconds(Double.parseDouble(splitCommand.substring(1))));
+        case 'w' -> 
+          commandList.addCommands(Commands.waitSeconds(Double.parseDouble(splitCommand.substring(1))));
 
         case 't' ->
 				{
           double targetMatchTimeElapsed = Double.parseDouble(splitCommand.substring(1));
-          commandList.add(Commands.waitUntil(() -> Timer.getMatchTime() < (15 - targetMatchTimeElapsed)));
+          commandList.addCommands(Commands.waitUntil(() -> Timer.getMatchTime() < (15 - targetMatchTimeElapsed)));
         }
 
         case 'r' ->
-				{
-          commandList.add(s_Swerve.poseDriveCommand(new AlliancePose2dSup(FieldConstants.getLineup(splitCommand)), swerveStateSup));
-          commandList.add(Commands.waitSeconds(0.1));
-          commandList.add(s_Coral.setSpeedCommand(Constants.Coral.forwardSpeed).until(s_Coral::getSensor));
-        }
+          commandList.addCommands(
+            s_Swerve.poseDriveCommand(new AlliancePose2dSup(FieldConstants.getLineup(splitCommand)), swerveStateSup),
+            Commands.waitSeconds(0.1),
+            s_Coral.setSpeedCommand(Constants.Coral.forwardSpeed).until(s_Coral::getSensor)
+          );
 
         case 'c' ->
-				{
-          commandList.add(s_Swerve.poseDriveCommand(new AlliancePose2dSup(FieldConstants.getLineup(splitCommand)), swerveStateSup));
-          commandList.add(Commands.waitUntil(s_Coral::getSensor));
-        }
+          commandList.addCommands(
+            s_Swerve.poseDriveCommand(new AlliancePose2dSup(FieldConstants.getLineup(splitCommand)), swerveStateSup),
+            Commands.waitUntil(s_Coral::getSensor)
+          );
       }
     }
 
-    return new SequentialCommandGroup(commandList.toArray(Command[]::new)).withInterruptBehavior(InterruptionBehavior.kCancelIncoming);
+    return commandList.withInterruptBehavior(InterruptionBehavior.kCancelIncoming);
   }
 }
