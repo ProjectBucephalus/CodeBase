@@ -8,6 +8,7 @@ import edu.wpi.first.epilogue.Epilogue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.Pair;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
@@ -47,8 +48,8 @@ public class Robot extends TimedRobot
   
   /* State */
   private SwerveDriveState swerveState;
-  private TargetPosition currentTarget;
-  private DriveState currentDriveState;
+  private TargetPosition currentTarget = TargetPosition.None;
+  private DriveState currentDriveState = DriveState.None;
   private Command autoCommand;
 
   /* Telemetry and SD */
@@ -88,22 +89,41 @@ public class Robot extends TimedRobot
 
   public Robot() 
   {
-    /* State Initialisation */
-    currentDriveState = DriveState.None;
     updateSwerveState();
-    
-    /* Telemetry and SD */
+
+    initLogging();
+    initInputTransmute();
+    bindControls();
+    bindRumbles();
+  }
+
+  /* INIT METHODS */
+  /* ============ */
+  private void initLogging() 
+  {
     SignalLogger.enableAutoLogging(false);
+
     DataLogManager.start("/home/lvuser/logs");
     DriverStation.startDataLog(DataLogManager.getLog());
+
     Epilogue.bind(this);
+
     SmartDashboard.putData("Field", field);
+
     s_Swerve.registerTelemetry(ctreLogger::telemeterize);
-    
-    /* Configure Input Transmutation */
+  }
+
+  private void initInputTransmute()
+  {
     boolean redAlliance = FieldUtils.isRedAlliance();
-    driverStick.rotated(redAlliance);
-    driverStick.withFieldObjects(GeoFencing.fieldGeoFence).withBrake(driverBrake).withInputCurve(driverInputCurve).withDeadband(driverDeadband);
+    
+    driverStick
+      .rotated(redAlliance)
+      .withFieldObjects(GeoFencing.fieldGeoFence)
+      .withBrake(driverBrake)
+      .withInputCurve(driverInputCurve)
+      .withDeadband(driverDeadband);
+
     FieldUtils.activateAllianceFencing(redAlliance);
     FieldConstants.GeoFencing.configureAttractors((testTarget, testState) -> currentTarget == testTarget && currentDriveState == testState);
     FieldObject.setRobotRadiusSup
@@ -112,14 +132,10 @@ public class Robot extends TimedRobot
         robotRadiusCircumscribed : 
         robotRadiusInscribed
       );
-    FieldObject.setRobotPosSup(swerveState.Pose::getTranslation);
-
-    /* Bindings */
-    bindControls();
-    bindRumbles();
+    FieldObject.setRobotPosSup(this::getTranslation);
+    GeoFencing.fieldGeoFence.setActiveCondition(SD.FENCE_TOGGLE::get);
   }
 
-  /* Binding Methods */
   private void bindControls()
   {
     /* Default Commands */
@@ -215,7 +231,8 @@ public class Robot extends TimedRobot
     io_operatorRight.addRumbleTrigger("ScoreReady" , new Trigger(() -> FieldUtils.atReefLineUp(swerveState.Pose)));
   }
 
-  /* Util Methods */
+  /* UTIL METHODS */
+  /* ============ */
   public static void setYaw(double newYaw) {s_Swerve.getPigeon2().setYaw(newYaw);}
 
   private void updateSwerveState()
@@ -223,13 +240,26 @@ public class Robot extends TimedRobot
     swerveState = s_Swerve.getState();
     field.setRobotPose(swerveState.Pose);
   }
+
+  /** Returns the t2d of the robot centre in field coordinates */
+  public Translation2d getTranslation() {return swerveState.Pose.getTranslation();}
   
-  /* Opmode Methods */
+  /* OPMODE METHODS */
+  /* ============ */
   @Override
   public void robotPeriodic() 
   {
     updateSwerveState();
     CommandScheduler.getInstance().run();
+  }
+
+  @Override
+  public void disabledInit()
+  {
+    if (getTranslation().equals(Translation2d.kZero))
+    {
+      s_Swerve.resetPose(FieldUtils.isRedAlliance() ? FieldConstants.redStartLine : FieldConstants.blueStartLine);
+    }
   }
 
   @Override
