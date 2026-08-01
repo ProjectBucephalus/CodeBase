@@ -4,278 +4,499 @@
 
 package frc.robot;
 
+import java.util.Optional;
+
+import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.epilogue.Epilogue;
 import edu.wpi.first.epilogue.Logged;
-import edu.wpi.first.math.Pair;
-import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.epilogue.Logged.Strategy;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DataLogManager;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
-import edu.wpi.first.wpilibj.XboxController.Axis;
+import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.smartdashboard.Field2d;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.button.CommandGenericHID;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
+import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.SignalLogger;
+import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
 
-import frc.robot.commands.swerve.*;
+import frc.robot.autobuilder.AutoBuilder;
 import frc.robot.constants.*;
-import static frc.robot.constants.IDConstants.*;
-import static frc.robot.constants.FieldConstants.*;
-import static frc.robot.constants.FieldConstants.GeoFencing.*;
+import frc.robot.constants.Constants.*;
+import frc.robot.constants.Constants.IntakeConstants.ExtensionConstants;
+import frc.robot.constants.FieldConstants.GeoFencing;
+import frc.robot.controlTransmutation.*;
+import frc.robot.controlTransmutation.geoFence.GeoFence;
+import frc.robot.leds.Block;
+import frc.robot.leds.patterns.ChasePattern;
+import frc.robot.leds.patterns.Patterns;
 import frc.robot.subsystems.*;
+import frc.robot.subsystems.generic.*;
 import frc.robot.subsystems.vision.*;
-import frc.robot.subsystems.vision.Vision.TagPOI;
-import frc.robot.util.AutoFactories;
-import frc.robot.util.FieldUtils;
-import frc.robot.util.SD;
-import frc.robot.util.controlTransmutation.*;
-import frc.robot.util.libs.Telemetry;
 
-@Logged
+import frc.robot.util.*;
+
+/**
+ * 5985 Robot Super-Structure
+ * <p>
+ * Coordinate system notes:
+ * <ul>
+ * <li> Robot Relative:
+ *  <ul>
+ *  <li> +Fore / -Aft -> X axis in Robot coordinates
+ *  <li> +Port / -Stbd -> Y axis in Robot corrdinates
+ *  </ul>
+ * <li> Field Absolute:
+ *  <ul>
+ *  <li> +East / -West -> X axis in Field coordinates
+ *  <li> +North / -South -> Y axis in Field coordinates
+ *  </ul>
+ * <li> Driver Relative:
+ *  <ul>
+ *  <li> In / Out -> From driver perspective, to make their lives easier
+ *  <li> Left / Right -> From driver perspective, to make their lives easier
+ *  </ul>
+ * </ul>
+ */
+@Logged(strategy = Strategy.OPT_IN)
 public class Robot extends TimedRobot 
 {
-  /* Enums */
-  public enum TargetPosition {Left, Right, Centre, None}
-  public enum DriveState {Reef, Station, Barge, None}
-  
   /* State */
-  private SwerveDriveState swerveState;
-  private TargetPosition currentTarget = TargetPosition.None;
-  private DriveState currentDriveState = DriveState.None;
-  private Command autoCommand;
+  public enum ClimbPosition { None, Left, Right }
+  public enum ShootersState { Auto, Stbd, Port, Manual, Test }
+  public enum NavState      { Manual, HeadingLocked, Nudged, Blocked, Following, AtTarget, RedShift, BlueShift, DualShift, Disabled }
+
+  @Logged
+  public class RobotState 
+  {
+    public ClimbPosition climbPos = ClimbPosition.None;
+    public ShootersState shoot = ShootersState.Auto;
+    public NavState nav = NavState.Disabled;
+    public boolean nudging = true;
+    public SwerveDriveState swerve = new SwerveDriveState();
+    public Translation2d joystickOutput = Translation2d.kZero;
+  }
+  
+  @Logged
+  public final RobotState state = new RobotState();
+  private Optional<Command> autoCommand = Optional.empty();
 
   /* Telemetry and SD */
-  private Field2d field = new Field2d();
-  private final Telemetry ctreLogger = new Telemetry(Constants.Swerve.maxSpeed);
-  
-  /* Subsystems */
-  private final static CommandSwerveDrivetrain s_Swerve = TunerConstants.createDrivetrain();
-  private final CoralRoller s_Coral = new CoralRoller();
-  private final Vision s_Vision = new Vision
-    (
-      (poseEst, timestmp, stdDevs) -> 
-      {
-        s_Swerve.setVisionMeasurementStdDevs(stdDevs); 
-        s_Swerve.addVisionMeasurement(poseEst, timestmp);
-      },
-      () -> Pair.of(s_Swerve.getPigeon2().getYaw().getValueAsDouble(), swerveState.Speeds.omegaRadiansPerSecond), 
-      new Limelight(foreLimelightName), 
-      new Limelight(aftLimelightName)
-    );
+  private final CANBus canBus = new CANBus();
 
   /* Controllers */
-  private final CommandXboxController driver = new CommandXboxController(0);
-  private final CommandXboxController operator = new CommandXboxController(1);
-
-  /* Rumble */
-  private final RumbleRequester io_driverRight   = new RumbleRequester(driver, RumbleType.kRightRumble, SD.RUMBLE_DRIVER);
-  private final RumbleRequester io_driverLeft    = new RumbleRequester(driver, RumbleType.kLeftRumble, SD.RUMBLE_DRIVER);
-  private final RumbleRequester io_operatorRight  = new RumbleRequester(operator, RumbleType.kRightRumble, SD.RUMBLE_OPERATOR);
-  private final RumbleRequester io_operatorLeft   = new RumbleRequester(operator, RumbleType.kLeftRumble, SD.RUMBLE_OPERATOR);
+  private final CommandXboxController driver = new CommandXboxController(IDConstants.driverPort);
+  private final CommandXboxController operator = new CommandXboxController(IDConstants.debugPort);
+  private final CommandGenericHID switchboard = new CommandGenericHID(IDConstants.switchboardPort);
   
+  /* Subsystems */
+  private final CommandSwerveDrivetrain s_Swerve = TunerConstants.createDrivetrain();
+
+  private final Limelight s_PhotonPort = new Limelight
+  (
+    IDConstants.portLimelightName, 
+    VisionConstants.flatCameraToTurret, 
+    s_PortShooter::getAzimuthTimestamped, 
+    ShooterConstants.portShooterOffset
+  );
+
+  private final Limelight s_PhotonStbd = new Limelight
+  (
+    IDConstants.stbdLimelightName, 
+    VisionConstants.flatCameraToTurret, 
+    s_StbdShooter::getAzimuthTimestamped, 
+    ShooterConstants.stbdShooterOffset
+  );
+  
+  @Logged(name = "Vision")
+  private final Vision s_Vision = new Vision
+  (
+    s_Swerve::addVisionMeasurement,
+    () -> state.swerve.Speeds.omegaRadiansPerSecond,
+    s_PhotonPort,
+    s_PhotonStbd
+  );
+  
+  /* Rumble */
+  private final RumbleRequester io_driverRight = new RumbleRequester(driver, RumbleType.kRightRumble, PBDash.RUMBLE_DRIVER::get);
+  private final RumbleRequester io_driverLeft  = new RumbleRequester(driver, RumbleType.kLeftRumble, PBDash.RUMBLE_DRIVER::get);
+  private final RumbleRequester io_operatorRight  = new RumbleRequester(operator, RumbleType.kRightRumble, PBDash.RUMBLE_OPERATOR::get);
+  private final RumbleRequester io_operatorLeft   = new RumbleRequester(operator, RumbleType.kLeftRumble, PBDash.RUMBLE_OPERATOR::get);
+  
+  /* LEDs */
+  private LEDStrip io_LEDs;
+
   /* Input Transmutation */
   private final JoystickTransmuter driverStick = new JoystickTransmuter(driver::getLeftY, driver::getLeftX).invertX().invertY();
-  private final Brake driverBrake = new Brake(driver::getRightTriggerAxis, Constants.Control.maxThrottle, Constants.Control.minThrottle);
+  private final JoystickTransmuter driverStickRaw = new JoystickTransmuter(driver::getLeftY, driver::getLeftX).invertX().invertY();
+  private final Brake driverBrake = new Brake
+  (
+    () -> Math.max
+      (
+        driver.leftBumper().getAsBoolean() 
+          ? ControlConstants.brakeFromIntake 
+          : 0, 
+        driver.getRightTriggerAxis()
+      ), 
+    ControlConstants.maxThrottle, 
+    ControlConstants.minThrottle
+  );
   private final InputCurve driverInputCurve = new InputCurve(2);
   private final Deadband driverDeadband = new Deadband();
 
-  public Robot() 
-  {
-    updateSwerveState();
+  private final AutoBuilder autoBuilder = new AutoBuilder(s_Intake, s_Extension, s_Climber, io_ClimberPost, state);
 
+  public Robot() 
+  {    
     initLogging();
     initInputTransmute();
-    bindControls();
+
+    new ControlBinder
+    (
+      state, 
+      driver, 
+      operator, 
+      switchboard, 
+      driverStick, 
+      driverBrake, 
+      s_Swerve, 
+      s_Vision,
+      s_PhotonPort, 
+      s_PhotonStbd
+    )
+    .bind();
+
     bindRumbles();
+    bindLEDs();
   }
 
   /* INIT METHODS */
   /* ============ */
+  /** Set up logging and telemetry systems */
   private void initLogging() 
   {
-    SignalLogger.enableAutoLogging(false);
+    SignalLogger.enableAutoLogging(true);
 
-    DataLogManager.start("/home/lvuser/logs");
-    DriverStation.startDataLog(DataLogManager.getLog());
+    if (!isSimulation()) 
+    {
+      DataLogManager.start();
+      DriverStation.startDataLog(DataLogManager.getLog());
+    }
 
     Epilogue.bind(this);
 
-    SmartDashboard.putData("Field", field);
+    s_Swerve.registerTelemetry(this::updateSwerveState);
 
-    s_Swerve.registerTelemetry(ctreLogger::telemeterize);
+    CameraServer.startAutomaticCapture();
+
+    PBDash.putSendable("Current Commands", CommandScheduler.getInstance());
   }
 
+  /** Set up input modification and fencing systems */
   private void initInputTransmute()
   {
-    boolean redAlliance = FieldUtils.isRedAlliance();
-    
+    DriveBuilder.init
+    (
+      s_Swerve, 
+      driverStick::stickOutput,
+      () -> -driver.getRightX(),
+      driver::getRightTriggerAxis,
+      () -> state.swerve.Pose,
+      state
+    );
+
     driverStick
-      .rotated(redAlliance)
+      .rotated(FieldUtils.isAlliance(Alliance.Red))
       .withFieldObjects(GeoFencing.fieldGeoFence)
       .withBrake(driverBrake)
       .withInputCurve(driverInputCurve)
       .withDeadband(driverDeadband);
 
-    FieldUtils.activateAllianceFencing(redAlliance);
-    FieldConstants.GeoFencing.configureAttractors((testTarget, testState) -> currentTarget == testTarget && currentDriveState == testState);
-    FieldObject.setRobotRadiusSup
-      (() -> 
-        Math.hypot(swerveState.Speeds.vxMetersPerSecond, swerveState.Speeds.vyMetersPerSecond) >= robotSpeedThreshold ? 
-        robotRadiusCircumscribed : 
-        robotRadiusInscribed
-      );
-    FieldObject.setRobotPosSup(this::getTranslation);
-    GeoFencing.fieldGeoFence.setActiveCondition(SD.FENCE_TOGGLE::get);
+    FieldObject.setRobotRadiusSup(() -> SwerveConstants.robotRadiusExpanded);
+    FieldObject.setRobotPosSup(() -> state.swerve.Pose.getTranslation());
+
+    FieldObject.setGlobalActiveCondition(() -> s_Vision.hasLocalisation() && PBDash.IO_FENCE.get());
+    
+    GeoFencing.fieldRedGeoFence.setActiveCondition(() -> FieldUtils.isAlliance(Alliance.Red));
+    GeoFencing.fieldBlueGeoFence.setActiveCondition(() -> FieldUtils.isAlliance(Alliance.Blue));
+    
+    GeoFencing.towerClearBlueLeft .setActiveCondition(() -> state.climbPos == ClimbPosition.Right);
+    GeoFencing.towerPostBlueS     .setActiveCondition(() -> state.climbPos != ClimbPosition.Right);
+    GeoFencing.towerClearRedLeft  .setActiveCondition(() -> state.climbPos == ClimbPosition.Right);
+    GeoFencing.towerPostRedN      .setActiveCondition(() -> state.climbPos != ClimbPosition.Right);
+    GeoFencing.towerClearBlueRight.setActiveCondition(() -> state.climbPos == ClimbPosition.Left);
+    GeoFencing.towerPostBlueN     .setActiveCondition(() -> state.climbPos != ClimbPosition.Left);
+    GeoFencing.towerClearRedRight .setActiveCondition(() -> state.climbPos == ClimbPosition.Left);
+    GeoFencing.towerPostRedS      .setActiveCondition(() -> state.climbPos != ClimbPosition.Left);
+    GeoFencing.climbBarrier       .setActiveCondition(() -> state.climbPos != ClimbPosition.None);
+    
+    // Climb attractor TriggerVector setup
+    GeoFencing.climbBlueLeft 
+      .withControlInput(driverStickRaw::stickOutput)
+      .setActiveCondition(() -> state.climbPos == ClimbPosition.Left  && FieldUtils.isAlliance(Alliance.Blue));
+    GeoFencing.climbRedLeft  
+      .withControlInput(driverStickRaw::stickOutput)
+      .setActiveCondition(() -> state.climbPos == ClimbPosition.Left  && FieldUtils.isAlliance(Alliance.Red));
+    GeoFencing.climbBlueRight
+      .withControlInput(driverStickRaw::stickOutput)
+      .setActiveCondition(() -> state.climbPos == ClimbPosition.Right && FieldUtils.isAlliance(Alliance.Blue));
+    GeoFencing.climbRedRight 
+      .withControlInput(driverStickRaw::stickOutput)
+      .setActiveCondition(() -> state.climbPos == ClimbPosition.Right && FieldUtils.isAlliance(Alliance.Red));
   }
 
-  private void bindControls()
-  {
-    /* Default Commands */
-    s_Swerve.setDefaultCommand
-    (
-      new ManualDrive
-      (
-        s_Swerve, 
-        driverStick::stickOutput,
-        () -> -driver.getRightX(),
-        driver::getRightTriggerAxis
-      )
-    );
-    s_Coral.setDefaultCommand(s_Coral.setSpeedCommand(0));
-
-    /* Setting Drive States */
-    driver.povLeft().onTrue(Commands.runOnce(() -> currentTarget = TargetPosition.Left));
-    driver.povRight().onTrue(Commands.runOnce(() -> currentTarget = TargetPosition.Right));
-    driver.povUp().onTrue(Commands.runOnce(() -> currentTarget = TargetPosition.Centre));
-    driver.povDown().onTrue(Commands.runOnce(() -> currentTarget = TargetPosition.None));
-    
-    driver.x().onTrue(Commands.runOnce(() -> currentDriveState = DriveState.Reef));
-    driver.a().onTrue(Commands.runOnce(() -> currentDriveState = DriveState.Station));
-    driver.y().onTrue(Commands.runOnce(() -> currentDriveState = DriveState.Barge));
-    driver.b().onTrue(Commands.runOnce(() -> currentDriveState = DriveState.None));
-    driver.axisMagnitudeGreaterThan(Axis.kRightX.value, 0.2).onTrue(Commands.runOnce(() -> currentDriveState = DriveState.None));
-    
-    /* Coral Roller */
-    driver.leftTrigger().whileTrue(s_Coral.setSpeedCommand(Constants.Coral.forwardSpeed));
-    driver.leftBumper().whileTrue(s_Coral.setSpeedCommand(Constants.Coral.reverseSpeed));
-    new Trigger(() -> FieldUtils.atReefLineUp(swerveState.Pose)).whileTrue(s_Coral.setSpeedCommand(Constants.Coral.forwardSpeed));
-
-    /* Heading Locking */
-    new Trigger(() -> currentDriveState == DriveState.None)
-      .onTrue(Commands.runOnce(() -> s_Vision.setActivePOI(TagPOI.REEF)))
-      .whileTrue
-      (
-        new ManualDrive
-        (
-          s_Swerve, 
-          driverStick::stickOutput,
-          () -> -driver.getRightX(),
-          driver::getRightTriggerAxis
-        )
-      );
-    new Trigger(() -> currentDriveState == DriveState.Reef)
-      .onTrue(Commands.runOnce(() -> s_Vision.setActivePOI(TagPOI.REEF)))
-      .whileTrue
-      (
-        new TargetScoreDrive
-        (
-          s_Swerve, 
-          driverStick::stickOutput,
-          Rotation2d.kZero,
-          swerveState.Pose::getTranslation
-        )
-      );
-    new Trigger(() -> currentDriveState == DriveState.Station)
-    .onTrue(Commands.runOnce(() -> s_Vision.setActivePOI(TagPOI.CORALSTATION)))
-      .whileTrue
-      (
-        new TargetStationDrive
-        (
-          s_Swerve, 
-          driverStick::stickOutput,
-          Rotation2d.kZero,
-          swerveState.Pose::getTranslation
-        )
-      );
-    new Trigger(() -> currentDriveState == DriveState.Barge)
-      .onTrue(Commands.runOnce(() -> s_Vision.setActivePOI(TagPOI.BARGE)))
-      .whileTrue
-      (
-        new HeadingLockedDrive
-        (
-          s_Swerve, 
-          driverStick::stickOutput,
-          Rotation2d.kZero,
-          Rotation2d.kZero,
-          swerveState.Pose::getTranslation
-        )
-      );
-    
-    /* Other */
-    driver.start().onTrue(Commands.runOnce(s_Vision::resetRotation).ignoringDisable(true));
-    new Trigger(SD.LL_EXPOSURE_UP::button).onTrue(Commands.runOnce(s_Vision::incrementPipeline));
-    new Trigger(SD.LL_EXPOSURE_DOWN::button).onTrue(Commands.runOnce(s_Vision::decrementPipeline));
-  }
-
+  /** Sets trigger conditions to activate controller rumbles */
   private void bindRumbles()
   {
-    io_operatorLeft.addRumbleTrigger("CoralHeld", new Trigger(s_Coral::getSensor));
-    io_operatorRight.addRumbleTrigger("ScoreReady" , new Trigger(() -> FieldUtils.atReefLineUp(swerveState.Pose)));
+    // See teleopInit/testInit for rumble on teleop start
+
+    new Trigger(() -> FieldUtils.hubActiveToleranced(3, 0)) 
+      .onChange(io_driverLeft.timedRumbleCmd("Shift Warning", 3));
+
+    new Trigger(FieldUtils::hubActive) 
+      .onChange(io_driverRight.timedRumbleCmd("Shift Change", 1.5));
+
+    new Trigger(() -> MatchTime.getGameTimeRemaining() <= 30)
+      .onTrue(io_operatorLeft.timedRumbleCmd("Endgame Start", 3));
+
+    new Trigger(() -> MatchTime.getGameTimeRemaining() <= ControlConstants.lastClimbChance)
+      .onTrue(io_operatorRight.timedRumbleCmd("Last Climb Chance", 1.5));
+  }
+
+  private void bindLEDs()
+  {
+    // Port shooter state
+    Block.setPatternMulti
+    (
+      Patterns.supplied
+      (() -> 
+        switch (s_PortShooter.shootStatus()) 
+        {
+          case Idling -> Color.kPurple;
+          case BadLocation -> Color.kRed;
+          case Aiming -> Color.kYellow;
+          case Revving -> Color.kWhite;
+          case AwaitingInput -> Color.kBlue;
+          case Fire -> Color.kGreen;
+          case Vision -> Color.kCyan;
+        }
+      ),
+      IDConstants.portLEDBlocks
+    );
+
+    
+    // Drivebase state
+    Block.setPatternMulti
+    (
+      Patterns.conditional
+      (
+        () -> FieldUtils.hubBothTransition(3), // both hubs will be active
+        new ChasePattern(Color.kWhite, Color.kBlack, 3.0),
+        Patterns.conditional
+        (
+          () -> FieldUtils.hubTransition(Alliance.Red, 3), // red hub will be active
+          new ChasePattern(Color.kRed, 3.0),
+          Patterns.conditional
+          (
+            () -> FieldUtils.hubTransition(Alliance.Blue, 3), // blue hub will be active
+            new ChasePattern(Color.kBlue, -3.0),
+            Patterns.conditional
+            (
+              () -> state.nav == NavState.Disabled,
+              new ChasePattern(Color.kLimeGreen, Color.kGold, 1.0),
+              Patterns.supplied
+              (() -> 
+                switch (state.nav) 
+                {
+                  default -> Color.kPurple;
+                  case Nudged -> Color.kYellow;
+                  case Blocked -> Color.kOrange;
+                  case Following -> Color.kYellow;
+                  case AtTarget -> Color.kGreen;
+                  case RedShift -> Color.kRed;
+                  case BlueShift -> Color.kBlue;
+                  case DualShift -> Color.kWhite;
+                }
+              )
+            )
+          )
+        )
+      ),
+      IDConstants.lowerLEDBlocks
+    );
+
+    Block.setNTAddressMulti(PBDash.STATE_LED_PORT, IDConstants.portLEDBlocks);
+    Block.setNTAddressMulti(PBDash.STATE_LED_STBD, IDConstants.stbdLEDBlocks);
+    Block.setNTAddressMulti(PBDash.STATE_LED_DRIVE, IDConstants.lowerLEDBlocks);
+
+    io_LEDs = new LEDStrip
+    (
+      IDConstants.LEDPWDPort, 
+      IDConstants.allLEDBlocks
+    );
   }
 
   /* UTIL METHODS */
   /* ============ */
-  public static void setYaw(double newYaw) {s_Swerve.getPigeon2().setYaw(newYaw);}
 
-  private void updateSwerveState()
+  /** Pull current state from drivebase for external use, to avoid repeated expensive calls */
+  private void updateSwerveState(SwerveDriveState swerveState)
   {
-    swerveState = s_Swerve.getState();
-    field.setRobotPose(swerveState.Pose);
+    state.swerve = swerveState;
+    PBDash.FIELD.setRobotPose(swerveState.Pose);
+    PBDash.POSE.put
+    (
+      String.format
+      (
+        "X:%.2fm, Y:%.2fm, R:%.0f\u00b0", 
+        swerveState.Pose.getX(), 
+        swerveState.Pose.getY(), 
+        swerveState.Pose.getRotation().getDegrees()
+      )
+    );
+    PBDash.POSE_FINE.put
+    (
+      String.format
+      (
+        "X:%.3fm, Y:%.3fm, R:%.1f\u00b0", 
+        swerveState.Pose.getX(), 
+        swerveState.Pose.getY(), 
+        swerveState.Pose.getRotation().getDegrees()
+      )
+    );
+
+    FieldObject.fetchRobotValues();
+    GeoFence.clearBlocked();
+    PBDash.putFieldObject("Triggering Object");
   }
 
-  /** Returns the t2d of the robot centre in field coordinates */
-  public Translation2d getTranslation() {return swerveState.Pose.getTranslation();}
+  private void compileAuto()
+  {
+    autoCommand = Optional.of(autoBuilder.compile(PBDash.AUTO_STRING.get()));
+  }
+
+  private void checkDevices()
+  {
+    PBDash.DEVICE_ERRORS.init();
+    
+    if (!driver.isConnected() || !operator.isConnected()) PBDash.DEVICE_ERRORS.append("Controller, ");
+    if (!(switchboard.button(1)).or(switchboard.button(2)).or(switchboard.button(3)).getAsBoolean()) PBDash.DEVICE_ERRORS.append("Switchboard, ");
+
+    if (!s_Swerve.devicesValid()) PBDash.DEVICE_ERRORS.append("Drivebase, ");
+    
+    if (!s_Vision.hasLocalisation()) PBDash.DEVICE_ERRORS.append("Vision, ");
+
+    double batteryVoltage = getBattery();
+    if (batteryVoltage < 12.5) PBDash.DEVICE_ERRORS.append("Battery " + batteryVoltage + "v, ");
+  }
+
+  @Logged(name = "CAN Load")
+  public float getCanLoad() 
+    {return canBus.getStatus().BusUtilization;}
+  
+  @Logged(name = "Battery Voltage")
+  public double getBattery() 
+    {return Conversions.round(RobotController.getBatteryVoltage(), 2);}
   
   /* OPMODE METHODS */
   /* ============ */
   @Override
   public void robotPeriodic() 
   {
-    updateSwerveState();
+    FieldUtils.updateAutoWinner();
+    PBDash.updateSendables();
+    PBDash.putDouble("Match Time", MatchTime.getGameTimeElapsed());
     CommandScheduler.getInstance().run();
   }
 
   @Override
   public void disabledInit()
   {
-    if (getTranslation().equals(Translation2d.kZero))
-    {
-      s_Swerve.resetPose(FieldUtils.isRedAlliance() ? FieldConstants.redStartLine : FieldConstants.blueStartLine);
-    }
+    FieldUtils.updateAlliance();
+    
+    if (state.swerve.Pose.getTranslation().equals(Translation2d.kZero))
+      s_Swerve.resetPose
+      (
+        switch (FieldUtils.getAlliance()) 
+        {
+          case Blue -> FieldConstants.blueStartLine; 
+          case Red -> FieldConstants.redStartLine;
+        }
+      );
+  }
+
+  @Override
+  public void disabledPeriodic()
+  {
+    FieldUtils.updateAlliance();
+
+    if (PBDash.AUTO_STRING.hasChanged()) 
+      compileAuto();
+
+    checkDevices();
   }
 
   @Override
   public void autonomousInit() 
   {
-    autoCommand = AutoFactories.getCommandList(SD.AUTO_STRING.get(), s_Coral, s_Swerve, () -> swerveState);
+    MatchTime.startAuto();
+    FieldUtils.updateAlliance();
+    
+    compileAuto();
 
-    if (autoCommand != null) autoCommand.schedule();
+    CommandScheduler.getInstance().schedule(autoCommand.get());
   }
 
   @Override
   public void teleopInit() 
   {
-    if (autoCommand != null) autoCommand.cancel();
+    MatchTime.startTele();
+    FieldUtils.updateAlliance();
+    // Update driver input rotation based on alliance
+    driverStick.rotated(FieldUtils.isAlliance(Alliance.Red));
+    
+    autoCommand.ifPresent(Command::cancel);
+
+    PBDash.removeFieldObject("Auto Path");
+
+    CommandScheduler.getInstance()
+      .schedule
+      (
+        io_driverLeft.timedRumbleCmd("Teleop Start", 1.5), 
+        io_driverRight.timedRumbleCmd("Teleop Start", 1.5)
+      );
   }
 
   @Override
-  public void testInit() {CommandScheduler.getInstance().cancelAll();}
+  public void testInit() 
+  {
+    CommandScheduler.getInstance().cancelAll();
+
+    FieldUtils.updateAlliance();
+    // Update driver input rotation based on alliance
+    driverStick.rotated(FieldUtils.isAlliance(Alliance.Red));
+
+    CommandScheduler.getInstance()
+      .schedule
+      (
+        io_driverLeft.timedRumbleCmd("Test Start", 0.5), 
+        io_driverRight.timedRumbleCmd("Test Start", 0.5)
+      );
+  }
+
+  @Override
+  public void testPeriodic()
+  {
+    state.shoot = ShootersState.Test;
+  }
 }

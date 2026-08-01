@@ -1,6 +1,14 @@
 package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.*;
+import static frc.robot.constants.Constants.SwerveConstants.driveKD;
+import static frc.robot.constants.Constants.SwerveConstants.driveKI;
+import static frc.robot.constants.Constants.SwerveConstants.driveKP;
+import static frc.robot.constants.Constants.SwerveConstants.maxAngularVelocity;
+import static frc.robot.constants.Constants.SwerveConstants.maxSpeed;
+import static frc.robot.constants.Constants.SwerveConstants.rotationKD;
+import static frc.robot.constants.Constants.SwerveConstants.rotationKI;
+import static frc.robot.constants.Constants.SwerveConstants.rotationKP;
 
 import java.util.function.Supplier;
 
@@ -27,20 +35,17 @@ import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import static frc.robot.constants.Constants.Swerve.*;
+import frc.robot.constants.FieldConstants;
 import frc.robot.constants.TunerConstants.TunerSwerveDrivetrain;
-import frc.robot.util.FieldUtils;
-import frc.robot.util.controlTransmutation.PIDDriveTransmuter;
+import frc.robot.util.Conversions;
 
 /**
  * Class that extends the Phoenix 6 SwerveDrivetrain class and implements
  * Subsystem so it can easily be used in command-based projects.
+ * @author CTRE
  */
 public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Subsystem, Sendable 
 {
-  private final PIDController thetaController = new PIDController(rotationKP, rotationKI, rotationKD);
-  private final PIDDriveTransmuter pidTransmuter = new PIDDriveTransmuter(driveKP, driveKI, driveKD);
-
   private static final double kSimLoopPeriod = 0.005; // 5 ms
   private Notifier m_simNotifier = null;
   private double m_lastSimTime;
@@ -58,6 +63,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
   private final SwerveRequest.SysIdSwerveRotation m_rotationCharacterization = new SwerveRequest.SysIdSwerveRotation();
 
   /* SysId routine for characterizing translation. This is used to find PID gains for the drive motors. */
+  @SuppressWarnings("unused")
   private final SysIdRoutine m_sysIdRoutineTranslation = new SysIdRoutine
   (
     new SysIdRoutine.Config
@@ -129,7 +135,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
   );
 
   /* The SysId routine to test */
-  private SysIdRoutine m_sysIdRoutineToApply = m_sysIdRoutineTranslation;
+  private SysIdRoutine m_sysIdRoutineToApply = m_sysIdRoutineRotation;
 
   /**
    * Constructs a CTRE SwerveDrivetrain using the specified constants.
@@ -150,8 +156,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     super(drivetrainConstants, modules);
     if (Utils.isSimulation()) 
       {startSimThread();}
-    
-    thetaController.enableContinuousInput(-Math.PI, Math.PI);
   }
 
   /**
@@ -177,8 +181,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     super(drivetrainConstants, odometryUpdateFrequency, modules);
     if (Utils.isSimulation()) 
       {startSimThread();}
-    
-    thetaController.enableContinuousInput(-Math.PI, Math.PI);
   }
 
   /**
@@ -212,10 +214,9 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     super(drivetrainConstants, odometryUpdateFrequency, odometryStandardDeviation, visionStandardDeviation, modules);
     if (Utils.isSimulation()) 
       {startSimThread();}
-    
-    thetaController.enableContinuousInput(-Math.PI, Math.PI);
   }
 
+  /** @author 5985, based on external docs */
   @Override
   public void initSendable(SendableBuilder builder) 
   {
@@ -266,43 +267,69 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
   public Command sysIdDynamic(SysIdRoutine.Direction direction) 
     {return m_sysIdRoutineToApply.dynamic(direction);}
 
-  public Command poseDriveCommand(Supplier<Pose2d> targetSupplier, Supplier<SwerveDriveState> swerveStateSup) 
+  /**
+   * Calculates the required drive input to drive to a pose using a PID control loop, accounting for geofencing
+   * 
+   * @param target Current target pose to drive towards
+   * @param pose Current robot pose
+   * @param brake Throttle to apply, [0..1]. 1 is full speed, 0 is stopped
+   * @return Chassis speeds, m/s, m/s, rad/s
+   */
+  public ChassisSpeeds calculateDrivePID(Pose2d target, Pose2d pose, double translationThrottle, double rotationThrottle)
   {
-    final var driveRequest = new SwerveRequest.ApplyRobotSpeeds();    
+    final PIDController xController = new PIDController(driveKP, driveKI, driveKD);
+    final PIDController yController = new PIDController(driveKP, driveKI, driveKD);
+    final PIDController thetaController = new PIDController(rotationKP, rotationKI, rotationKD);
+    thetaController.enableContinuousInput(-Math.PI, Math.PI);
 
-    pidTransmuter.withTargetPoseSup(targetSupplier);
+    final var robotPos = pose.getTranslation();
+    final var targetPos = target.getTranslation();
 
-    return 
-    run
-    (() -> {
-      final Pose2d pose = swerveStateSup.get().Pose;
-      final Pose2d target = targetSupplier.get();
-
-      final double speedTheta = 
-        Math.min(thetaController.calculate(pose.getRotation().getRadians(), target.getRotation().getRadians()), maxAngularVelocity);
-      final Translation2d throttleXY = pidTransmuter.process(pose.getTranslation());
-
-      setControl
+    double speedX = xController.calculate(robotPos.getX(), targetPos.getX());
+    double speedY = yController.calculate(robotPos.getY(), targetPos.getY());
+    double throttleX;
+    double throttleY;
+    
+    if(Math.abs(speedX) > Math.abs(speedY))
+    {
+      double ratio = (speedX==0 || speedY==0) ? 0 : speedY/speedX;
+      throttleX = Conversions.clamp(speedX);
+      throttleY = throttleX*ratio;
+    }
+    else
+    {
+      double ratio = (speedX==0 || speedY==0) ? 0 : speedX/speedY;
+      throttleY = Conversions.clamp(speedY);
+      throttleX = throttleY*ratio;
+    }
+    final var throttleXY = FieldConstants.GeoFencing.fieldGeoFence.process(new Translation2d(throttleX, throttleY).times(translationThrottle));
+    
+    final double speedTheta = 
+      Conversions.clamp
       (
-        driveRequest.withSpeeds
-        (
-          ChassisSpeeds.fromFieldRelativeSpeeds
-            (
-              new ChassisSpeeds
-              (
-                throttleXY.getX() * maxSpeed,
-                throttleXY.getY() * maxSpeed,
-                speedTheta
-              ),
-              pose.getRotation()
-            )
-        )
-      );
-    }).until(() -> FieldUtils.atPose(swerveStateSup.get().Pose, targetSupplier.get()));
+        thetaController.calculate(pose.getRotation().getRadians(), target.getRotation().getRadians()), 
+        -maxAngularVelocity, 
+        maxAngularVelocity
+      ) * rotationThrottle;
+
+    xController.close();
+    yController.close();
+    thetaController.close();
+
+    return ChassisSpeeds.fromFieldRelativeSpeeds
+    (
+      new ChassisSpeeds
+      (
+        throttleXY.getX() * maxSpeed,
+        throttleXY.getY() * maxSpeed,
+        speedTheta
+      ),
+      pose.getRotation()
+    );
   }
 
   @Override
-  public void periodic() 
+  public void periodic()
   {
     /*
       * Periodically try to apply the operator perspective.
@@ -326,6 +353,24 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         }
       );
     }
+  }
+
+  /** @return {@code true} if all CAN devices are connected */
+  public boolean devicesValid()
+  {
+    return moduleValid(0)
+        && moduleValid(1)
+        && moduleValid(2)
+        && moduleValid(3)
+        && getPigeon2().isConnected();
+  }
+
+  private boolean moduleValid(int index)
+  {
+    var module = getModule(index);
+    return module.getEncoder().isConnected()
+        && module.getDriveMotor().isConnected()
+        && module.getSteerMotor().isConnected();
   }
 
   private void startSimThread() 
