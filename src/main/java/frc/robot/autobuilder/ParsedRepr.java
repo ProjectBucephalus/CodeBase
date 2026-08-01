@@ -125,9 +125,7 @@ public final class ParsedRepr
     {
       driveto, driveby, follow, 
       wait, waitfor, waituntil, 
-      intake, 
       passing,
-      climb
     }
 
     /** @return The argument at index {@code i} */

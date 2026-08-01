@@ -12,7 +12,6 @@ import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Strategy;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DataLogManager;
-import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
@@ -27,13 +26,11 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.SignalLogger;
-import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
 
 import frc.robot.autobuilder.AutoBuilder;
 import frc.robot.constants.*;
 import frc.robot.constants.Constants.*;
-import frc.robot.constants.Constants.IntakeConstants.ExtensionConstants;
 import frc.robot.constants.FieldConstants.GeoFencing;
 import frc.robot.controlTransmutation.*;
 import frc.robot.controlTransmutation.geoFence.GeoFence;
@@ -41,7 +38,6 @@ import frc.robot.leds.Block;
 import frc.robot.leds.patterns.ChasePattern;
 import frc.robot.leds.patterns.Patterns;
 import frc.robot.subsystems.*;
-import frc.robot.subsystems.generic.*;
 import frc.robot.subsystems.vision.*;
 
 import frc.robot.util.*;
@@ -105,16 +101,12 @@ public class Robot extends TimedRobot
   private final Limelight s_PhotonPort = new Limelight
   (
     IDConstants.portLimelightName, 
-    VisionConstants.flatCameraToTurret, 
-    s_PortShooter::getAzimuthTimestamped, 
     ShooterConstants.portShooterOffset
   );
 
   private final Limelight s_PhotonStbd = new Limelight
   (
     IDConstants.stbdLimelightName, 
-    VisionConstants.flatCameraToTurret, 
-    s_StbdShooter::getAzimuthTimestamped, 
     ShooterConstants.stbdShooterOffset
   );
   
@@ -154,7 +146,7 @@ public class Robot extends TimedRobot
   private final InputCurve driverInputCurve = new InputCurve(2);
   private final Deadband driverDeadband = new Deadband();
 
-  private final AutoBuilder autoBuilder = new AutoBuilder(s_Intake, s_Extension, s_Climber, io_ClimberPost, state);
+  private final AutoBuilder autoBuilder = new AutoBuilder(state);
 
   public Robot() 
   {    
@@ -274,27 +266,7 @@ public class Robot extends TimedRobot
   }
 
   private void bindLEDs()
-  {
-    // Port shooter state
-    Block.setPatternMulti
-    (
-      Patterns.supplied
-      (() -> 
-        switch (s_PortShooter.shootStatus()) 
-        {
-          case Idling -> Color.kPurple;
-          case BadLocation -> Color.kRed;
-          case Aiming -> Color.kYellow;
-          case Revving -> Color.kWhite;
-          case AwaitingInput -> Color.kBlue;
-          case Fire -> Color.kGreen;
-          case Vision -> Color.kCyan;
-        }
-      ),
-      IDConstants.portLEDBlocks
-    );
-
-    
+  {    
     // Drivebase state
     Block.setPatternMulti
     (

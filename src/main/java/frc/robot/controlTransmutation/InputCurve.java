@@ -1,8 +1,6 @@
 package frc.robot.controlTransmutation;
 
 import edu.wpi.first.math.geometry.Translation2d;
-import frc.robot.util.Conversions;
-
 /** 
  * Applies a parabolic sensitivity curve to the input 
  * @author 5985 

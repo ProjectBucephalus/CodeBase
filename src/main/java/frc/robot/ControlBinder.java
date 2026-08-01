@@ -4,47 +4,27 @@ import static edu.wpi.first.wpilibj2.command.Commands.*;
 import static frc.robot.constants.FieldConstants.GeoFencing.*;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 import com.ctre.phoenix6.SignalLogger;
 
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandGenericHID;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Robot.ClimbPosition;
 import frc.robot.Robot.RobotState;
-import frc.robot.Robot.ShootersState;
 import frc.robot.constants.IDConstants;
-import frc.robot.constants.Path;
-import frc.robot.constants.Constants.ClimberConstants;
 import frc.robot.constants.Constants.ControlConstants;
 import frc.robot.constants.Constants.IntakeConstants;
-import frc.robot.constants.Constants.ShooterConstants;
-import frc.robot.constants.Constants.IntakeConstants.ExtensionConstants;
-import frc.robot.constants.FieldConstants.FieldTuning;
-import frc.robot.constants.FieldConstants.GeoFencing;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.Limelight;
-import frc.robot.util.Conversions;
-import frc.robot.util.FieldUtils;
 import frc.robot.util.PBDash;
 import frc.robot.controlTransmutation.Brake;
 import frc.robot.controlTransmutation.JoystickTransmuter;
 import frc.robot.subsystems.*;
-import frc.robot.subsystems.generic.LinearExtension;
-import frc.robot.subsystems.generic.PositionMotor;
 
 public record ControlBinder
 (
@@ -63,7 +43,6 @@ public record ControlBinder
 {
   private static AtomicBoolean bound = new AtomicBoolean(false);
   private static Trigger switchboardConnected;
-  private static Trigger shootZoneTrigger;
     
   public void bind()
   {

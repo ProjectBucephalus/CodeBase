@@ -1,11 +1,7 @@
 package frc.robot.autobuilder;
 
-import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Robot.RobotState;
-import frc.robot.subsystems.Intake;
-import frc.robot.subsystems.generic.LinearExtension;
-import frc.robot.subsystems.generic.PositionMotor;
 import frc.robot.util.PBDash;
 
 /**
@@ -19,16 +15,12 @@ public class AutoBuilder
 
   /**
    * Constructs the autobuilder, storing all the values that will be later needed
-   * @param s_Intake
-   * @param s_Extension
-   * @param s_Climber
-   * @param io_ClimberPost
    * @param state
    */
-  public AutoBuilder(Intake s_Intake, PositionMotor s_Extension, LinearExtension s_Climber, DigitalInput io_ClimberPost, RobotState state)
+  public AutoBuilder(RobotState state)
   {
     parser = new Parser();
-    commandGen = new CommandGen(s_Intake, s_Extension, s_Climber, io_ClimberPost, state);
+    commandGen = new CommandGen(state);
   }
 
   /**
