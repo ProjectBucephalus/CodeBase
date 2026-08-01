@@ -34,42 +34,6 @@ public final class IDConstants
   /* --------- */
 
   public static final int LEDPWDPort = 2;
-
-  public record ShooterIDs(int flywheelLeadCAN, int flywheelFollowCAN, int azimuthCAN, int indexerCAN, int azimuthAIO, int altitudePWM, String ntID){}
-
-  /* Port Turret, CAN [16..19], PWM [0], AIO [0] */
-  public static final ShooterIDs portShooterIDs = new ShooterIDs
-  (
-    16,
-    17,
-    18,
-    19,
-    0,
-    0,
-    "Port"
-  );
-
-  /* Stbd Turret, CAN [20..23], PWM [1], AIO [1] */
-  public static final ShooterIDs stbdShooterIDs = new ShooterIDs
-  (
-    20,
-    21,
-    22,
-    23,
-    1,
-    1,
-    "Stbd"
-  );
-
-  /* Intake, CAN [28..30] */
-  public static final int extensionEncoderCAN = 28;
-  public static final int intakeCAN = 29;
-  public static final int extensionCAN = 30;
-
-  /* Climber, CAN [32], DIO [0..1] */
-  public static final int climberCAN = 32;
-  public static final int climberLimitDIO = 1;
-  public static final int climberPostDIO = 0;
   
   /* Network device names */
   /* -------------------- */
@@ -85,16 +49,11 @@ public final class IDConstants
   public static final int switchboardPort = 2;
 
   /* Switchboard Switches */
-  public static final int disableShootersSwitchID = 2;
   public static final int testManualSwitchID = 3;
   public static final int testHubSwitchID = 1;
   public static final int visionSwitchID = 8;
   public static final int fencingSwitchID = 7;
-  public static final int shootHubSwitchID = 6;
-  public static final int shootPassSwitchID = 5;
-  public static final int climbWiggleSwitchID = 4;
   public static final int calibrateButtonID = 10;
-  public static final int climbButtonID = 9;
 
   /* LEDs */
   /* ---- */

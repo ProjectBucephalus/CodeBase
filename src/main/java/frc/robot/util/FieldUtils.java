@@ -7,11 +7,6 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import static frc.robot.constants.FieldConstants.*;
 
-import java.util.Optional;
-import frc.robot.Robot;
-
-import frc.robot.constants.Constants.ShooterConstants;
-
 import static frc.robot.constants.Constants.SwerveConstants.robotRadiusInscribed;
 
 /** 
@@ -22,96 +17,6 @@ public final class FieldUtils
 {
   private static Alliance alliance;
   static {updateAlliance();}
-
-  private static Optional<Alliance> autoWinner = Optional.empty();
-
-  public static Optional<Alliance> getAutoWinner()
-    {return autoWinner;}
-
-  /** 
-   * Attempts to fetch the alliance that won auto from DriverStation, if we haven't already got it </p>
-   * Randomly assigns a winner when running Auto in simulation
-   */
-  public static void updateAutoWinner()
-  {
-    if (autoWinner.isEmpty()) 
-    {
-      String gameData = DriverStation.getGameSpecificMessage();
-      if (!gameData.isEmpty())
-        autoWinner = switch (gameData.charAt(0))
-        {
-          case 'B' -> Optional.of(Alliance.Blue);
-          case 'R' -> Optional.of(Alliance.Red);
-          default  -> Optional.empty();
-        };
-        
-      else if (Robot.isSimulation() && DriverStation.isAutonomous())
-        autoWinner = Math.rint(Math.random()) == 0 ? Optional.of(Alliance.Blue) : Optional.of(Alliance.Red);
-    }
-  }
-
-  /** @return whether the provided alliance's hub is active, with margin on each side to maximise scoring */
-  public static boolean hubActiveToleranced(Alliance alliance, double preMargin, double postMargin) 
-  {
-    double timeElapsed = MatchTime.getTeleTimeElapsed();
-
-    if (hubBothToleranced(preMargin, postMargin))
-      return true;
-    else
-    {
-      if (alliance == autoWinner.get()) 
-        return (timeElapsed >= (35 - preMargin) && timeElapsed < (60 + postMargin)) // Shift 2
-        || (timeElapsed >= (85 - preMargin) && timeElapsed < (110 + postMargin));   // Shift 4
-      else 
-        return (timeElapsed >= (10 - preMargin) && timeElapsed < (35 + postMargin)) // Shift 1
-        || (timeElapsed >= (60 - preMargin) && timeElapsed < (85 + postMargin));    // Shift 3
-    }     
-  }
-
-  /** @return whether both hubs are active together, with margin on each side */
-  public static boolean hubBothToleranced(double preMargin, double postMargin)
-  {
-    double timeElapsed = MatchTime.getTeleTimeElapsed();
-
-    return
-    (
-      autoWinner.isEmpty()                 // Don't know yet
-      || timeElapsed == 0                  // Auto
-      || timeElapsed < (10 + postMargin)   // Transition
-      || timeElapsed >= (110 - preMargin)  // Endgame
-    );
-  }
-
-  /** @return whether the our alliance's hub is active, with margin on each side to maximise scoring */
-  public static boolean hubActiveToleranced(double preMargin, double postMargin)
-    {return hubActiveToleranced(getAlliance(), preMargin, postMargin);}
-
-  /** @return whether the provided alliance's hub is active */
-  public static boolean hubActive(Alliance alliance) 
-    {return hubActiveToleranced(alliance, 0, 0);}
-
-  /** @return whether our alliance's hub is active */
-  public static boolean hubActive() 
-    {return hubActiveToleranced(0, 0);}
-
-  /** @return whether the provided alliance's hub will become active within the given margin */
-  public static boolean hubTransition(Alliance alliance, double preMargin)
-  {
-    double timeElapsed = MatchTime.getTeleTimeElapsed();
-
-    if (autoWinner.isEmpty()) return false;
-    
-    if (alliance == autoWinner.get()) 
-      return (timeElapsed >= (35 - preMargin) && timeElapsed < (35)) // Shift 2
-      || (timeElapsed >= (85 - preMargin) && timeElapsed < (85));    // Shift 4
-    else 
-      return (timeElapsed >= (10 - preMargin) && timeElapsed < (10)) // Shift 1
-      || (timeElapsed >= (60 - preMargin) && timeElapsed < (60));    // Shift 3
-  }
-  
-  /** @return whether both hubs will become active within the given margin */
-  public static boolean hubBothTransition(double preMargin)
-    {return !hubBothToleranced(0, 0) && hubBothToleranced(preMargin, 0);}
 
   /**
    * Checks whether we are on the red alliance <p>
@@ -130,24 +35,6 @@ public final class FieldUtils
    */
   public static void updateAlliance()
     {alliance = DriverStation.getAlliance().orElse(Alliance.Blue);}
-
-  /** 
-   * @return the centre point of your alliance's hub
-   */
-  public static Translation2d getAllianceHubCentre() 
-    {return getHubCentre(getAlliance());}
-
-  /** 
-   * @return the centre point the alliance's hub
-   */
-  public static Translation2d getHubCentre(Alliance alliance) 
-  {
-    return switch (alliance) 
-    {
-      case Blue -> blueHubCentre;
-      case Red -> redHubCentre;
-    };
-  }
 
   /**
    * @return which driver station we are being controlled from (1, 2, or 3), or 0 if the value is unavailable
@@ -296,46 +183,4 @@ public final class FieldUtils
       case Red -> pos.getX() > redStartLine.getX() - robotRadiusInscribed;
     };
   }
-
-  public static Translation2d getPassPoint(Translation2d pos)
-  {
-    boolean inLeftHalf = switch (getAlliance())
-    {
-      case Blue -> pos.getY() > fieldCentre.getY();
-      case Red -> pos.getY() < fieldCentre.getY();
-    };
-
-    var point = ShooterConstants.passPoint.get();
-    
-    if (inLeftHalf) point = new Translation2d(point.getX(), fieldWidth - point.getY());
-
-    double maxRangeSqrd = ShooterConstants.maxPassRange * ShooterConstants.maxPassRange;
-    // Behaviour is the same as `pos.getDistance(point) > maxPassRange`, 
-    // but avoids computationally expensive square root function
-    if (pos.getSquaredDistance(point) > maxRangeSqrd)
-    {
-      double dy = point.getY() - pos.getY();
-      double dx = Math.sqrt(maxRangeSqrd - (dy * dy));
-      //        pos
-      // =--dy--/
-      // |     /
-      // |   maxRange
-      // dx  /
-      // |  /
-      // | /
-      // =/
-      // |
-      // |
-      // point
-
-      double newX = switch (getAlliance())
-      {
-        case Blue -> pos.getX() - dx;
-        case Red -> pos.getX() + dx;
-      };
-      point = new Translation2d(newX, point.getY());
-    }
-
-    return point;
-  }  
 }

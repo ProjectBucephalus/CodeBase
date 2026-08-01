@@ -28,13 +28,7 @@ public class LEDStrip extends SubsystemBase
 
   public LEDStrip(int pwmPort, int length)
   {
-    leds = new AddressableLED(pwmPort);    
-    buffer = new AddressableLEDBuffer(length);
-    blocks = new ArrayList<>();
-    this.brightness = 0.2;
-
-    leds.setLength(length);
-    leds.start();
+    this(pwmPort, 0.2, length);
   }
 
   public LEDStrip(int pwmPort, double brightness, Block... blocks)
@@ -53,16 +47,7 @@ public class LEDStrip extends SubsystemBase
 
   public LEDStrip(int pwmPort, Block... blocks)
   {
-    int length = 0;
-    for (var block : blocks) length += block.length;
-
-    leds = new AddressableLED(pwmPort);
-    buffer = new AddressableLEDBuffer(length);
-    this.blocks = new ArrayList<>(List.of(blocks));
-    this.brightness = 0.2;
-
-    leds.setLength(length);
-    leds.start();
+    this(pwmPort, 0.2, blocks);
   }
 
   public Block getBlock(int pos)
