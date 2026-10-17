@@ -133,26 +133,17 @@ public class LimitedMotor extends PositionMotor
     {
       if 
       (
+        //shift is not 0
         shiftSup.getAsDouble() != 0
+        &&
+        //man i wonder what this does
+        calibrated 
         && 
+        //not (at limit and going towards limit)
         !(
-          atLimit()
-          &&
-          (
-            (homeRotations <= minRotations + tolerance && shiftSup.getAsDouble() <= 0)
-            ||
-            (homeRotations >= maxRotations - tolerance && shiftSup.getAsDouble() >= 0)
-          )
-        )
-        && 
-        !(
-          calibrated 
-          && 
-          (
-            (shiftSup.getAsDouble() >= 0 && getAngle() >= maxRotations)
-            ||
-            (shiftSup.getAsDouble() <= 0 && getAngle() <= minRotations)
-          )
+          (shiftSup.getAsDouble() >= 0 && getAngle() >= maxRotations)
+          ||
+          (shiftSup.getAsDouble() <= 0 && getAngle() <= minRotations)
         )
       ) 
         baseSetTarget(getAngle() + shiftSup.getAsDouble());
