@@ -3,8 +3,6 @@ package frc.robot;
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 import static frc.robot.constants.FieldConstants.GeoFencing.*;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import com.ctre.phoenix6.SignalLogger;
 
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -18,7 +16,6 @@ import frc.robot.Robot.ClimbPosition;
 import frc.robot.Robot.RobotState;
 import frc.robot.constants.IDConstants;
 import frc.robot.constants.Constants.ControlConstants;
-import frc.robot.constants.Constants.IntakeConstants;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.Limelight;
 import frc.robot.util.PBDash;
@@ -29,7 +26,6 @@ import frc.robot.subsystems.*;
 public record ControlBinder
 (
   RobotState state,
-  //Supplier<Pose2d> poseSup,
   CommandXboxController driver,
   CommandXboxController operator,
   CommandGenericHID switchboard,
@@ -41,12 +37,17 @@ public record ControlBinder
   Limelight s_PhotonStbd
 )
 {
-  private static AtomicBoolean bound = new AtomicBoolean(false);
+  private static boolean bound = false;
   private static Trigger switchboardConnected;
     
   public void bind()
   {
-    if (bound.compareAndExchange(false, true)) return; // Guard against being called multiple times
+    // Guard against being called multiple times
+    if (bound) 
+    {
+      bound = false;
+      return;
+    }
 
     switchboardConnected = switchboard.button(1).or(switchboard.button(2)).or(switchboard.button(3));
 
@@ -56,38 +57,29 @@ public record ControlBinder
 
   private void bindState()
   {
-    // Auto Score
-    switchboard.button(IDConstants.shootHubSwitchID)
-      .onChange(runOnce(() -> PBDash.IO_SHOOT_HUB.put(switchboard.button(IDConstants.shootHubSwitchID).getAsBoolean())).onlyIf(switchboardConnected).ignoringDisable(true));
-
-    // Auto Pass
-    switchboard.button(IDConstants.shootPassSwitchID)
-      .onChange(runOnce(() -> PBDash.IO_SHOOT_PASS.put(switchboard.button(IDConstants.shootPassSwitchID).getAsBoolean())).onlyIf(switchboardConnected).ignoringDisable(true));
-
     // Fencing
     switchboard.button(IDConstants.fencingSwitchID)
-      .onChange(runOnce(() -> PBDash.IO_FENCE.put(switchboard.button(IDConstants.fencingSwitchID).getAsBoolean())).onlyIf(switchboardConnected).ignoringDisable(true));
+      .onChange(
+        runOnce(() -> PBDash.IO_FENCE.put(switchboard.button(IDConstants.fencingSwitchID).getAsBoolean()))
+        .onlyIf(switchboardConnected)
+        .ignoringDisable(true)
+      );
 
     // Vision
     switchboard.button(IDConstants.visionSwitchID)
-      .onChange(runOnce(() -> PBDash.IO_LL.put(switchboard.button(IDConstants.visionSwitchID).getAsBoolean())).onlyIf(switchboardConnected).ignoringDisable(true));
-
-    // Climber Wiggle
-    switchboard.button(IDConstants.climbWiggleSwitchID).negate()
-      .and(switchboardConnected)
-      .onChange(runOnce(() -> PBDash.IO_CLIMB_WIGGLE.put(switchboard.button(IDConstants.climbWiggleSwitchID).getAsBoolean())).ignoringDisable(true));
+      .onChange(
+        runOnce(() -> PBDash.IO_LL.put(switchboard.button(IDConstants.visionSwitchID).getAsBoolean()))
+        .onlyIf(switchboardConnected)
+        .ignoringDisable(true)
+      );
 
     // Power Save
     new Trigger(PBDash.IO_POWER_DRIVE::get)
-      .onTrue
-      (runOnce(() -> {
+      .onTrue(runOnce(() -> {
         PBDash.IO_MAX_THROTTLE.put(ControlConstants.powerSaveThrottle);
-        PBDash.IO_INTAKE_SPEED.put(IntakeConstants.RollerConstants.intakeMinSpeed);
       }))
-      .onFalse
-      (runOnce(() -> {
+      .onFalse(runOnce(() -> {
         PBDash.IO_MAX_THROTTLE.put(ControlConstants.maxThrottle);
-        PBDash.IO_INTAKE_SPEED.put(IntakeConstants.RollerConstants.intakeMaxSpeed);
       }));
   }
 
@@ -145,7 +137,12 @@ public record ControlBinder
   /** Mutually exclusive to {@link ControlBinder#bind bind()} */
   public void bindSysId()
   {
-    if (bound.compareAndExchange(false, true)) return; // Guard against being called multiple times
+    // Guard against being called multiple times
+    if (bound) 
+    {
+      bound = false;
+      return;
+    }
 
     s_Swerve.setDefaultCommand(DriveBuilder.manual());
 

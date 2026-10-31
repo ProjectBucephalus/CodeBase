@@ -55,6 +55,8 @@ public final class Constants
     /** Attractor maximum angle tolerance, degrees */
     public static final double maxAngleTolerance = 60;
 
+    /** Maximum robot speed to reduce power consumption, relative to maximum uncapped speed */
+    public static final double powerSaveThrottle = 0.5;
 
     @SuppressWarnings("unchecked") // No way to make it work that doesn't give warning afaik
     /** First element is the default */
