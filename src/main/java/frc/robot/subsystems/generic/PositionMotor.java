@@ -61,7 +61,7 @@ public class PositionMotor extends SubsystemBase
 
   /**
    * Sets the target point for the motor 
-   * @param target mechanism rotations
+   * @param target position in mechanism rotations
    */
   public void setTarget(double pos)
     {baseSetTarget(pos);}
@@ -78,15 +78,15 @@ public class PositionMotor extends SubsystemBase
   }
 
   /**
-   * Creates a command to set the target point for the motor <p>
-   * @param targetSup mechanism rotations
-   * @return the Command
+   * Creates a command to set the target point for the motor when scheduled <p>
+   * @param targetSup mechanism rotations, supply a target position
+   * @return the Command that sets the target once
    */
   public Command setTargetCmd(DoubleSupplier targetSup)
     {return runOnce(() -> setTarget(targetSup.getAsDouble()));}
 
   /**
-   * Creates a command to set the target point for the motor <p>
+   * Creates a command to set the target point for the motor, for a fixed target position <p>
    * NOTE: The provided value is only evaluated when the command is created
    * @param target mechanism rotations
    * @return the Command
