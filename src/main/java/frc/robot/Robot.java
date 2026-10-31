@@ -273,19 +273,19 @@ public class Robot extends TimedRobot
       Patterns.conditional
       (
         () -> FieldUtils.hubBothTransition(3), // both hubs will be active
-        new ChasePattern(Color.kWhite, Color.kBlack, 3.0),
+        ChasePattern.alternating(Color.kWhite, Color.kBlack, 3.0),
         Patterns.conditional
         (
           () -> FieldUtils.hubTransition(Alliance.Red, 3), // red hub will be active
-          new ChasePattern(Color.kRed, 3.0),
+          ChasePattern.chaseFlash(Color.kRed, 3.0),
           Patterns.conditional
           (
             () -> FieldUtils.hubTransition(Alliance.Blue, 3), // blue hub will be active
-            new ChasePattern(Color.kBlue, -3.0),
+            ChasePattern.chaseFlash(Color.kBlue, -3.0),
             Patterns.conditional
             (
               () -> state.nav == NavState.Disabled,
-              new ChasePattern(Color.kLimeGreen, Color.kGold, 1.0),
+              ChasePattern.alternating(Color.kLimeGreen, Color.kGold, 1.0),
               Patterns.supplied
               (() -> 
                 switch (state.nav) 
