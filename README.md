@@ -1,4 +1,4 @@
-List of available classes and brief descriptions of their functions:
+List of available classes and brief descriptions of their functions
 
 # Util #
 AlliancePose2d/AllianceTranslation2d
@@ -10,16 +10,16 @@ Conversions
 - mod(value, base) returns mathematical modulus (default % doesn't handle negative correctly)
 - wrap(int, min, max) returns value within endpoints inclusive (default only handles double)
 - clamp() all variants allow limits in any order (default needs min,max)
--- int and double with endpoints
--- single input double clamps [-1..1]
--- input Translation2d clamps magnitude [0..1]
+  - int and double with endpoints
+  - single input double clamps [-1..1]
+  - input Translation2d clamps magnitude [0..1]
 - round(value, places) returns value rounded to arbitrary precision
 - buildPose() creates a new Pose2d from double values in metres/degrees
 - atPose/Translation/Rotation() checks if input values are near eachother within standard tollerance (under ControlConstants)
 - nearPose/Translation/Rotation() checks if input values are within input tollerances of eachother
 - normaliseAngle(newAngle, currentAngle, maxAngle) for turret-style rotation pathing
--- Works for any range of motion. Max angle is symetric, e.g. max=180 -> range=[-180..180]
--- Favours the centre over shortest path if shortest is >135 degrees
+  - Works for any range of motion. Max angle is symetric, e.g. max=180 -> range=[-180..180]
+  - Favours the centre over shortest path if shortest is >135 degrees
 
 FieldUtils
 - alliance() various functions for getting and comparing the current alliance
@@ -45,16 +45,16 @@ MatchTime
 PBDash
 - Custom NetworkTable interface with configurable data keys
 - Predefined keys can use any type, and are given a default value
--- Can be globally accessed by object name rather than by string
--- get() and put() automatically handle the associated data type
--- button() returns true when the value has changed then resets it
--- Various triggers can be set to monitor the value
+  - Can be globally accessed by object name rather than by string
+  - get() and put() automatically handle the associated data type
+  - button() returns true when the value has changed then resets it
+  - Various triggers can be set to monitor the value
 - Generic access for Int, Double, Bool, and String, automatic default pushed on first use
 - Various functions to add objects to the field render
--- putFieldObject() sets position of named object(s)
--- addToFieldObject() appends poses to existing object, with padding to ensure it renders as a trajectory
--- putFieldPath() renders a line between given points
--- trailFieldObject() renders a line of the last 50 poses given
+  - putFieldObject() sets position of named object(s)
+  - addToFieldObject() appends poses to existing object, with padding to ensure it renders as a trajectory
+  - putFieldPath() renders a line between given points
+  - trailFieldObject() renders a line of the last 50 poses given
 
 # LEDs #
 Block
@@ -72,38 +72,53 @@ Patterns
 # ControlTransmutation #
 JoystickTransmuter
 - 
+
 Brake
 - 
+
 Deadband
 - 
+
 CrossDeadband
 - 
+
 InputCurve
 - 
+
 GeoFence
 - 
+
 TriggerObject
 - 
 
 # Subsystems #
 CommandSwerveDrivetrain
 - 
+
 RumbleRequester
 - 
+
 LEDStrip
 - 
+
 Vision/Limelight
 - 
+
 BinaryMotor
 - 
+
 PositionMotor
 - 
+
 LimitedMotor/LinearExtension
 - 
+
 VelocityMotor
 - 
+
 BiMotor
 - 
+
 SpringMotor
 - 
 
