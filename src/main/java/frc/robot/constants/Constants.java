@@ -28,6 +28,8 @@ public final class Constants
   /** Values for controller input and general driving behaviours */
   public static final class ControlConstants
   {
+    // TODO: Update the following based on driver preference
+    /** Minimum valid axis value to account for drift or bumps */
     public static final double stickDeadband = 0.15;
     /** Normal maximum robot speed, relative to maximum uncapped speed */
     public static final double maxThrottle = 0.8;
@@ -39,20 +41,20 @@ public final class Constants
     public static final double minRotThrottle = 0.3;
     /** How far a trigger must be pressed to be considered on, [0..1] */
     public static final double triggerThreshold = 0.8;
+    /** Stronger deadband value for manual overides */
+    public static final double manualControlDeadband = 0.25;
+    
+    // TODO: Update the following based on robot precision 
     /** Translation lineup tolerance, meters */
-    public static final double lineupTolerance = 0.1;
+    public static final double lineupTolerance = 0.1; 
     /** Rotation lineup tolerance, degrees */
     public static final double angleLineupTolerance = 4;
-
-    /** Maximum robot speed to reduce power consumption, relative to maximum uncapped speed */
-    public static final double powerSaveThrottle = 0.5;
 
     /** Attractor minimum angle tolerance, degrees */
     public static final double minAngleTolerance = 20;
     /** Attractor maximum angle tolerance, degrees */
     public static final double maxAngleTolerance = 60;
 
-    public static final double manualControlDeadband = 0.25;
 
     @SuppressWarnings("unchecked") // No way to make it work that doesn't give warning afaik
     /** First element is the default */

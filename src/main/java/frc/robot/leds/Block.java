@@ -13,6 +13,7 @@ public class Block
   private LEDPattern pattern;
 
   private PBDash.Key<String[]> ntAddress = null;
+  /** Buffer of first 4 LEDs for rendering on dashboard */
   private AddressableLEDBuffer ntBuffer = new AddressableLEDBuffer(4);
 
   /**
@@ -79,7 +80,7 @@ public class Block
       // getLED is non-trivial and entails a memory allocation
       var ledZero = ntBuffer.getLED(0);
       if 
-      (
+      ( // If all four LEDs have the same value, only push one to network for rendering
         ledZero.equals(ntBuffer.getLED(1))
         && ledZero.equals(ntBuffer.getLED(2))
         && ledZero.equals(ntBuffer.getLED(3))
