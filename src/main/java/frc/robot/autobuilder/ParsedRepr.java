@@ -123,9 +123,11 @@ public final class ParsedRepr
      */
     public enum Type
     {
+      /* Evergreen instructions */
       driveto, driveby, follow, 
-      wait, waitfor, waituntil, 
-      passing,
+      wait, waitfor, waituntil,
+      /* Custom instructions - TODO: Update list of instructions as needed */
+      passing // TODO: Kept as example
     }
 
     /** @return The argument at index {@code i} */

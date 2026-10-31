@@ -175,7 +175,7 @@ public final class FieldUtils
    * @param pos Position to check against
    * @return If the position is within the alliance zone
    */
-  public static boolean inAllianceZone(Translation2d pos) 
+  public static boolean inAllianceZone(Translation2d pos) // TODO : Adjust logic as needed based on field layout
   {
     return switch (getAlliance())
     {

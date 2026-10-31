@@ -125,6 +125,7 @@ public class CommandGen
   {
     switch (instr.type())
     {
+      /* Evergreen Instructions */
       // driveto x y r - Go to pose `x`, `y`, `r` (alliance origin relative). `r` optional, maintains current rotation if omitted
       case driveto -> compileDriveTo(instr);
       // driveby x y - Relative drive
@@ -146,7 +147,9 @@ public class CommandGen
         double duration = instr.arg(0).asNum();
         commands.addCommands(DriveBuilder.waitCommand().until(() -> Timer.getMatchTime() < (15 - duration)));
       }
-      // passing b - sets auto passing on or off based on `b`
+
+      /* Custom Instructions - TODO: Update list of instructions as needed */
+      // passing b - sets auto passing on or off based on `b` // TODO: Kept as example
       case passing -> 
       {
         instr.assertArgCount(1);

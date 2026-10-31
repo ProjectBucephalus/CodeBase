@@ -280,10 +280,15 @@ public class PBDash
       init();
     }
 
-    /** @return current value of the entry */
+    /** @return current value of the entry, initialises if it doesn't exist yet */
     @SuppressWarnings("unchecked")
     public T get()
-      {return (T)ntEntry.get().getValue();}
+    {
+      var entry = ntEntry.get();
+      if (!entry.isValid())
+        {init();}
+      return (T)entry.getValue();
+    }
 
     /** @param value value to send to network */
     public void put(T value)
