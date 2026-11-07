@@ -97,26 +97,12 @@ public class Robot extends TimedRobot
   
   /* Subsystems */
   private final CommandSwerveDrivetrain s_Swerve = TunerConstants.createDrivetrain();
-
-  private final Limelight s_PhotonPort = new Limelight
-  (
-    IDConstants.portLimelightName, 
-    ShooterConstants.portShooterOffset
-  );
-
-  private final Limelight s_PhotonStbd = new Limelight
-  (
-    IDConstants.stbdLimelightName, 
-    ShooterConstants.stbdShooterOffset
-  );
   
   @Logged(name = "Vision")
   private final Vision s_Vision = new Vision
   (
     s_Swerve::addVisionMeasurement,
-    () -> state.swerve.Speeds.omegaRadiansPerSecond,
-    s_PhotonPort,
-    s_PhotonStbd
+    () -> state.swerve.Speeds.omegaRadiansPerSecond
   );
   
   /* Rumble */
@@ -151,9 +137,7 @@ public class Robot extends TimedRobot
       driverStick, 
       driverBrake, 
       s_Swerve, 
-      s_Vision,
-      s_PhotonPort, 
-      s_PhotonStbd
+      s_Vision
     )
     .bind();
 
@@ -347,7 +331,6 @@ public class Robot extends TimedRobot
   @Override
   public void robotPeriodic() 
   {
-    FieldUtils.updateAutoWinner();
     PBDash.updateSendables();
     PBDash.putDouble("Match Time", MatchTime.getGameTimeElapsed());
     CommandScheduler.getInstance().run();

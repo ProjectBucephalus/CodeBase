@@ -17,7 +17,6 @@ import frc.robot.Robot.RobotState;
 import frc.robot.constants.IDConstants;
 import frc.robot.constants.Constants.ControlConstants;
 import frc.robot.subsystems.vision.Vision;
-import frc.robot.subsystems.vision.Limelight;
 import frc.robot.util.PBDash;
 import frc.robot.controlTransmutation.Brake;
 import frc.robot.controlTransmutation.JoystickTransmuter;
@@ -32,9 +31,7 @@ public record ControlBinder
   JoystickTransmuter driverStick,
   Brake driverBrake,
   CommandSwerveDrivetrain s_Swerve,
-  Vision s_Vision,
-  Limelight s_PhotonPort,
-  Limelight s_PhotonStbd
+  Vision s_Vision
 )
 {
   private static boolean bound = false;
