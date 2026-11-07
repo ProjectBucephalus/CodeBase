@@ -142,7 +142,12 @@ VelocityMotor
 
 
 BiMotor
-- 
+- Extend VelocityMotor to control two TalonFX motors together.
+- Use a leader-follower configuration, where the second motor follow the first.
+- Constructor accepts seperate CAN IDs fro the leader and the follower, a shared configuration, and flipped option.
+- The flipped option determines whether the follower runs aligned with or opposed to the leader.
+- Inherits velocity controls methods and commands from VelocityMotor.
+- Overrides devicesValid() to check that both motors are connected. 
 
 SpringMotor
 - 
