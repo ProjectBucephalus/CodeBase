@@ -25,9 +25,10 @@ public class LimitedMotor extends PositionMotor
 
   protected final double minRotations;
   protected final double maxRotations;
-  protected final double homeRotations;
+  protected double homeRotations;
+  protected final double assumedPos;
 
-  private final boolean safeSpeedValid;
+  protected final boolean safeSpeedValid;
   /** Tolerance to be considered at a position, calculated as 5% of travel range */
   private final double tolerance;
 
@@ -50,6 +51,10 @@ public class LimitedMotor extends PositionMotor
    */
   public LimitedMotor(int motorCAN, int limitIO, boolean invertLimit, double minRotations, double maxRotations, double homeRotations, TalonFXConfiguration configs)
   {
+    this(motorCAN, limitIO, invertLimit, minRotations, maxRotations, homeRotations, configs, maxRotations-homeRotations >= homeRotations-minRotations ? minRotations : maxRotations);
+  }
+  public LimitedMotor(int motorCAN, int limitIO, boolean invertLimit, double minRotations, double maxRotations, double homeRotations, TalonFXConfiguration configs, double assumedPos)
+  {
     super(motorCAN, configs);
 
     motorConfig = configs;
@@ -58,6 +63,7 @@ public class LimitedMotor extends PositionMotor
     this.maxRotations = Math.max(maxRotations, minRotations);
     this.minRotations = Math.min(maxRotations, minRotations);
     this.homeRotations = Conversions.clamp(homeRotations, maxRotations, minRotations);
+    this.assumedPos = assumedPos;
 
     tolerance = (this.maxRotations - this.minRotations) / 20;
 
@@ -113,14 +119,12 @@ public class LimitedMotor extends PositionMotor
   /** @return Command to run basic calibration cycle, calibrating on the high edge of the sensor if possible */
   public Command calibrateCmd()
   {
+    DoubleSupplier directionDoubleSupplier = ()-> (homeRotations-assumedPos);
     return Commands.sequence
     (
       Commands.sequence
       (
-        gotoTargetCmd(homeRotations),
-        gotoTargetCmd((maxRotations + minRotations) / 2),
-        gotoTargetCmd(minRotations),
-        gotoTargetCmd(maxRotations)
+        adjustTargetCmd(directionDoubleSupplier)/*until stall limit, then invert direction and try again*/
       ).until(this::atLimit),
       adjustTargetCmd(() -> homeRotations == maxRotations ? -0.05 : 0.05).until(() -> calibrated),
       setTargetCmd(homeRotations)
@@ -138,15 +142,9 @@ public class LimitedMotor extends PositionMotor
         &&
         //man i wonder what this does
         calibrated 
-        && 
-        //not (at limit and going towards limit)
-        !(
-          (shiftSup.getAsDouble() >= 0 && getAngle() >= maxRotations)
-          ||
-          (shiftSup.getAsDouble() <= 0 && getAngle() <= minRotations)
-        )
       ) 
-        baseSetTarget(getAngle() + shiftSup.getAsDouble());
+      //sets the target to the current position + shift (clamped between min and max rotations)
+        baseSetTarget(Conversions.clamp(getAngle() + shiftSup.getAsDouble(), minRotations, maxRotations));
     }
   );}
 
@@ -162,27 +160,15 @@ public class LimitedMotor extends PositionMotor
       double position;
       if (atLimit())
       {
-        // If the switch is initially true:
-        //  If home poisition is close to an end, set the position to that endpoint
-        //  Otherwise set the position slightly below home
-        if (homeRotations <= minRotations + tolerance) 
-          position = minRotations;
-        else if (homeRotations >= maxRotations - tolerance) 
-          position = maxRotations;
-        else 
-          position = homeRotations - tolerance;
+        // If the switch is initally true
+        //  Set the position slightly below home
+        position = homeRotations - tolerance;
       }
       else
       {
         // If the switch is initially false:
-        //  If home poisition is close to an end, set the position to the other endpoint
-        //  Otherwise set the position to the midpoint of the range of motion
-        if (homeRotations <= minRotations + tolerance) 
-          position = maxRotations;
-        else if (homeRotations >= maxRotations - tolerance) 
-          position = minRotations;
-        else
-          position = (minRotations + maxRotations) / 2;
+        //  Set the position to the midpoint of the range of motion
+        position = (minRotations + maxRotations) / 2;
       }
       m_Position.setPosition(position);
     }
@@ -199,14 +185,6 @@ public class LimitedMotor extends PositionMotor
         }
         // Flag when the sensor is true
         homeLastCycle = true;
-
-        // If sensor is at endstop, stop
-        if 
-        (
-          (homeRotations <= minRotations + tolerance && request.Position <= getAngle())
-          ||
-          (homeRotations >= maxRotations - tolerance && request.Position >= getAngle())
-        ) stop();
       }
       else // if not at limit
       {

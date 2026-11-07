@@ -70,7 +70,7 @@ public class Robot extends TimedRobot
   /* State */
   public enum ClimbPosition { None, Left, Right }
   public enum ShootersState { Auto, Stbd, Port, Manual, Test }
-  public enum NavState      { Manual, HeadingLocked, Nudged, Blocked, Following, AtTarget, RedShift, BlueShift, DualShift, Disabled }
+  public enum NavState      { Manual, HeadingLocked, Nudged, Blocked, Following, AtTarget, Disabled }
 
   @Logged
   public class RobotState 
@@ -97,26 +97,12 @@ public class Robot extends TimedRobot
   
   /* Subsystems */
   private final CommandSwerveDrivetrain s_Swerve = TunerConstants.createDrivetrain();
-
-  private final Limelight s_PhotonPort = new Limelight
-  (
-    IDConstants.portLimelightName, 
-    ShooterConstants.portShooterOffset
-  );
-
-  private final Limelight s_PhotonStbd = new Limelight
-  (
-    IDConstants.stbdLimelightName, 
-    ShooterConstants.stbdShooterOffset
-  );
   
   @Logged(name = "Vision")
   private final Vision s_Vision = new Vision
   (
     s_Swerve::addVisionMeasurement,
-    () -> state.swerve.Speeds.omegaRadiansPerSecond,
-    s_PhotonPort,
-    s_PhotonStbd
+    () -> state.swerve.Speeds.omegaRadiansPerSecond
   );
   
   /* Rumble */
@@ -131,18 +117,7 @@ public class Robot extends TimedRobot
   /* Input Transmutation */
   private final JoystickTransmuter driverStick = new JoystickTransmuter(driver::getLeftY, driver::getLeftX).invertX().invertY();
   private final JoystickTransmuter driverStickRaw = new JoystickTransmuter(driver::getLeftY, driver::getLeftX).invertX().invertY();
-  private final Brake driverBrake = new Brake
-  (
-    () -> Math.max
-      (
-        driver.leftBumper().getAsBoolean() 
-          ? ControlConstants.brakeFromIntake 
-          : 0, 
-        driver.getRightTriggerAxis()
-      ), 
-    ControlConstants.maxThrottle, 
-    ControlConstants.minThrottle
-  );
+  private final Brake driverBrake = new Brake(driver::getRightTriggerAxis, ControlConstants.maxThrottle, ControlConstants.minThrottle);
   private final InputCurve driverInputCurve = new InputCurve(2);
   private final Deadband driverDeadband = new Deadband();
 
@@ -162,9 +137,7 @@ public class Robot extends TimedRobot
       driverStick, 
       driverBrake, 
       s_Swerve, 
-      s_Vision,
-      s_PhotonPort, 
-      s_PhotonStbd
+      s_Vision
     )
     .bind();
 
@@ -252,17 +225,8 @@ public class Robot extends TimedRobot
   {
     // See teleopInit/testInit for rumble on teleop start
 
-    new Trigger(() -> FieldUtils.hubActiveToleranced(3, 0)) 
-      .onChange(io_driverLeft.timedRumbleCmd("Shift Warning", 3));
-
-    new Trigger(FieldUtils::hubActive) 
-      .onChange(io_driverRight.timedRumbleCmd("Shift Change", 1.5));
-
     new Trigger(() -> MatchTime.getGameTimeRemaining() <= 30)
       .onTrue(io_operatorLeft.timedRumbleCmd("Endgame Start", 3));
-
-    new Trigger(() -> MatchTime.getGameTimeRemaining() <= ControlConstants.lastClimbChance)
-      .onTrue(io_operatorRight.timedRumbleCmd("Last Climb Chance", 1.5));
   }
 
   private void bindLEDs()
@@ -272,36 +236,18 @@ public class Robot extends TimedRobot
     (
       Patterns.conditional
       (
-        () -> FieldUtils.hubBothTransition(3), // both hubs will be active
-        new ChasePattern(Color.kWhite, Color.kBlack, 3.0),
-        Patterns.conditional
-        (
-          () -> FieldUtils.hubTransition(Alliance.Red, 3), // red hub will be active
-          new ChasePattern(Color.kRed, 3.0),
-          Patterns.conditional
-          (
-            () -> FieldUtils.hubTransition(Alliance.Blue, 3), // blue hub will be active
-            new ChasePattern(Color.kBlue, -3.0),
-            Patterns.conditional
-            (
-              () -> state.nav == NavState.Disabled,
-              new ChasePattern(Color.kLimeGreen, Color.kGold, 1.0),
-              Patterns.supplied
-              (() -> 
-                switch (state.nav) 
-                {
-                  default -> Color.kPurple;
-                  case Nudged -> Color.kYellow;
-                  case Blocked -> Color.kOrange;
-                  case Following -> Color.kYellow;
-                  case AtTarget -> Color.kGreen;
-                  case RedShift -> Color.kRed;
-                  case BlueShift -> Color.kBlue;
-                  case DualShift -> Color.kWhite;
-                }
-              )
-            )
-          )
+        () -> state.nav == NavState.Disabled,
+        ChasePattern.alternating(Color.kLimeGreen, Color.kGold, 1.0),
+        Patterns.supplied
+        (() -> 
+          switch (state.nav) 
+          {
+            default -> Color.kPurple;
+            case Nudged -> Color.kYellow;
+            case Blocked -> Color.kOrange;
+            case Following -> Color.kYellow;
+            case AtTarget -> Color.kGreen;
+          }
         )
       ),
       IDConstants.lowerLEDBlocks
@@ -385,7 +331,6 @@ public class Robot extends TimedRobot
   @Override
   public void robotPeriodic() 
   {
-    FieldUtils.updateAutoWinner();
     PBDash.updateSendables();
     PBDash.putDouble("Match Time", MatchTime.getGameTimeElapsed());
     CommandScheduler.getInstance().run();

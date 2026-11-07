@@ -18,7 +18,6 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Robot.NavState;
@@ -30,7 +29,6 @@ import frc.robot.constants.Path.Node;
 import frc.robot.controlTransmutation.geoFence.GeoFence;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.util.Conversions;
-import frc.robot.util.FieldUtils;
 
 public class DriveBuilder
 {
@@ -85,13 +83,10 @@ public class DriveBuilder
 
   private static void manualStateUpdate(boolean hasInput)
   {
-    if (GeoFence.isBlocked()) robotState.nav = NavState.Blocked;
+    if (GeoFence.isBlocked()) 
+      robotState.nav = NavState.Blocked;
     else if (hasInput || robotState.nav != NavState.AtTarget)
-    if (FieldUtils.hubActive(Alliance.Blue)) 
-      if (FieldUtils.hubActive(Alliance.Red)) robotState.nav = NavState.DualShift;
-      else robotState.nav = NavState.BlueShift;
-    else if (FieldUtils.hubActive(Alliance.Red)) robotState.nav = NavState.RedShift;
-    else robotState.nav = NavState.Manual;
+      robotState.nav = NavState.Manual;
   }
 
   /** Creates a basic Manual drive command */

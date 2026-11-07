@@ -54,8 +54,8 @@ public class ChasePattern implements LEDPattern
    * @param colour2 Secondary colour
    * @param frequency Full cycles per second, Hz, use negative value to reverse direction
    */
-  public ChasePattern(Color colour1, Color colour2, double frequency)
-    {this(colour1, 1, colour2, 1, frequency);}
+  public static ChasePattern alternating(Color colour1, Color colour2, double frequency)
+    { return new ChasePattern(colour1, 1, colour2, 1, frequency); }
   
   /**
    * Creates a simple chase pattern of the given colour, with a single lit LED, cycling at the given frequency
@@ -63,16 +63,16 @@ public class ChasePattern implements LEDPattern
    * @param frames Number of LEDs in sequence, one of which will be lit, the rest dark
    * @param frequency Full cycles per second, Hz, use negative value to reverse direction
    */
-  public ChasePattern(Color colour, int frames, double frequency)
-    {this(colour, 1, Color.kBlack, frames-1, frequency);}
+  public static ChasePattern chaseBolt(Color colour, int frames, double frequency)
+    { return new ChasePattern(colour, 1, Color.kBlack, frames-1, frequency); }
 
   /**
    * Creates a simple 3-cell chase pattern of the given colour, cycling at the given frequency
    * @param colour Colour of lit LEDs
    * @param frequency Full cycles per second, Hz, use negative value to reverse direction
    */
-  public ChasePattern(Color colour, double frequency)
-    {this(colour, 1, Color.kBlack, 2, frequency);}
+  public static ChasePattern chaseFlash(Color colour, double frequency)
+    { return chaseBolt(colour, 3, frequency); }
 
   @Override
   public void applyTo(LEDReader reader, LEDWriter writer) 
