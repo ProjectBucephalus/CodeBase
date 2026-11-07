@@ -150,7 +150,13 @@ BiMotor
 - Overrides devicesValid() to check that both motors are connected. 
 
 SpringMotor
-- 
+- Wrapper around a TalonFX motor for position control using two different Motion Magic configuration slots.
+- setTarget() stores the desired target position in mechamism rotations.
+- setTargetCmd() sets the target once, accepting etheir fixed value or a DoubleSupplier.
+- getAngle() returns the current motor position in mechamism rotations.
+- periodic() continuosly sends the target to the motor and selects the control slots based on its current position:
+  - Slot 1
+  - Slot 0
 
 # AutoBuilder #
 AutoBuilder
