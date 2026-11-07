@@ -108,7 +108,20 @@ BinaryMotor
 - 
 
 PositionMotor
-- 
+- Wrapper around a TalonFX motor for position control using Motion Magic.
+- All positions and targets are measured in mechanicsm rotations.
+- setTarget() set the target position; baseSetTarget()sends the target directly to the motor, bypassing overridden setTarget() method in subclasses.
+- Various commands for position control:
+  - setTargetCmd() set a target once, accepting either fixed value or DoubleSupplier.
+  - gotoTargetCmd() set a target and wait until the motor reaches it.
+  - adjustTargetCmd() continuously adjust the target by the supply amount, mainly use for joystick control.
+  - getAngle()/getPosition() return the current position; getTarget() returns the requested target.  
+  - atTarget() check whether the motor within 0.1 of its target, using the value returned by getTarget() and getPosition().
+  - stop() sets motor output to zero; devicesValid() check the motor connection.
+- Stimultion:
+  - Using DCMotorSim to caculated movement from the simulated motor voltage.
+  - simulationPeriodic() updated the simulated motor position and velocity every simulation cycle.
+  - Feeds simulated position and velocity back to the TalonFX motor.
 
 LimitedMotor/LinearExtension
 - 
