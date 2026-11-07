@@ -105,11 +105,11 @@ public final class Constants
     public static final double maxAngularVelocity = 4;
 
     /** Radius from robot centre in metres where geofence is triggered for slow movements */
-    public static final double robotRadiusInscribed = 0.42;
+    public static final double robotRadiusInscribed = 0.1;
     /** Radius from robot centre in metres where geofence is triggered for fast movements */
-    public static final double robotRadiusCircumscribed = 0.6;
+    public static final double robotRadiusCircumscribed = 0.1;
     /** Radius enclosing robot when extended in metres where geofence is triggered for most movement */
-    public static final double robotRadiusExpanded = 0.66;
+    public static final double robotRadiusExpanded = 0.1;
     /** Speed threshold at which the robot changes between radii, m/s */
     public static final double robotSpeedThreshold = 1.5;
   }

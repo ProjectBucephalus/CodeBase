@@ -5,6 +5,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -26,8 +27,8 @@ public class Polygon extends GeoFence
     * Define regular polygon object
     * @param X x-coordinate of centre, metres
     * @param Y y-coordinate of centre, metres
-    * @param buffer range over which the robot slows down, metres  
     * @param radius circumscribed (centre-corner) radius of the object, metres
+    * @param buffer range over which the robot slows down, metres  
     * @param theta angle of the object: 0 = "corner at North", degrees Anticlockwise
     * @param sides number of polygon sides, integer [3..12]
     */
@@ -43,17 +44,25 @@ public class Polygon extends GeoFence
     this.checkRadius = radius + buffer;
     this.edgeLines = new Line[sides];
 
-    // Line endpoints are equidistant around a circle.
-    var pointAngle = Rotation2d.fromDegrees(360.0 / sides);
+    // The start of the first line/end of the last line
+    var initalPoint = new Translation2d(x, y + radius).rotateAround(centre, Rotation2d.fromDegrees(theta));
 
-    // Each point is equal to the previous point rotated around the centre by the pointAngle.
-    var prevPoint = new Translation2d(x, y + radius).rotateAround(centre, Rotation2d.fromDegrees(theta));
+    // Line endpoints are equidistant around a circle
+    var pointAngle = Rotation2d.fromDegrees(360.0 / (sides*2));
+
+    // Starting with the initial point, each subsequent point is equal to the previous point rotated by the angle
+    // Extra point between each line terminator point for the line midpoint
+    var polygonPoints = Stream
+      .iterate(initalPoint, prev -> prev.rotateAround(centre, pointAngle))
+      .limit(2 * sides + 2)
+      .toList();
+    
     for (int i = 0; i < sides; i++)
     {
       edgeLines[i] = new Line
       (
-        prevPoint,
-        prevPoint = prevPoint.rotateAround(centre, pointAngle),
+        polygonPoints.get(2*i),
+        polygonPoints.get(2*i + 2),
         0,
         buffer
       );

@@ -375,7 +375,8 @@ public class FieldConstants
       fieldStaticGeoFence, 
       fieldBlueGeoFence, 
       fieldRedGeoFence,
-      climbBarrier
+      climbBarrier,
+      new Polygon(fieldCentre.getX(), fieldCentre.getY(), 2, 0.5, 45, 4)
     ).addPriority(field);
 
     /** Minimum speed limit within a restrictor */
