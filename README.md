@@ -121,14 +121,25 @@ PositionMotor
   - stop() sets motor output to zero; devicesValid() check the motor connection.
 - Stimultion:
   - Using DCMotorSim to caculated movement from the simulated motor voltage.
-  - simulationPeriodic() updated the simulated motor position and velocity every simulation cycle.
-  - Feeds simulated position and velocity back to the TalonFX motor.
+  - simulationPeriodic() updated the simulated motor position every simulation cycle.
+  - Feeds simulated position back to the TalonFX motor.
 
 LimitedMotor/LinearExtension
 - 
 
 VelocityMotor
-- 
+- Wrapper around a TalonFX motor for position control using Motion Magic.
+- Controls motor speed in mechanism rotations per second
+- setSpeed() set the target motor velocity
+- setSpeedCmd() sets the velocity once using DoubleSupplier
+- runCmd() continously updates the target velocity from a Double Supplier, setting it to zero when the command ends.
+- getSpeed() returns the measured velocity
+- devicesValid() checks the motor connection.
+- Simulation:
+  - Using DCMotorSim to caculated movement from the simulated motor voltage.
+  - simulationPeriodic() updated the simulated motor velocity every simulation cycle.
+  - Feeds simulated velocity back to the TalonFX motor.
+
 
 BiMotor
 - 
