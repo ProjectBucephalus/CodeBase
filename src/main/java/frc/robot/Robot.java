@@ -112,7 +112,11 @@ public class Robot extends TimedRobot
   private final RumbleRequester io_operatorLeft   = new RumbleRequester(operator, RumbleType.kLeftRumble, PBDash.RUMBLE_OPERATOR::get);
   
   /* LEDs */
-  private LEDStrip io_LEDs;
+  private final LEDStrip io_LEDs = new LEDStrip
+  (
+    IDConstants.LEDPWDPort, 
+    IDConstants.allLEDBlocks
+  );
 
   /* Input Transmutation */
   private final JoystickTransmuter driverStick = new JoystickTransmuter(driver::getLeftY, driver::getLeftX).invertX().invertY();
@@ -256,12 +260,6 @@ public class Robot extends TimedRobot
     Block.setNTAddressMulti(PBDash.STATE_LED_PORT, IDConstants.portLEDBlocks);
     Block.setNTAddressMulti(PBDash.STATE_LED_STBD, IDConstants.stbdLEDBlocks);
     Block.setNTAddressMulti(PBDash.STATE_LED_DRIVE, IDConstants.lowerLEDBlocks);
-
-    io_LEDs = new LEDStrip
-    (
-      IDConstants.LEDPWDPort, 
-      IDConstants.allLEDBlocks
-    );
   }
 
   /* UTIL METHODS */
