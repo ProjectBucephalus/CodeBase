@@ -54,16 +54,33 @@ public class ObjectList extends FieldObject
   @Override
   public Translation2d process(Translation2d controlInput)
   {
+    displayCheck();
+
     if (!globalActiveSupplier.getAsBoolean() || !activeSupplier.getAsBoolean() || fieldObjects.isEmpty()) 
       return controlInput;
-
-    //fetchRobotValues();
-
+      
     var controlOutput = controlInput;
 
     for (int i = fieldObjects.size() - 1; i >= 0; i--)
       controlOutput = fieldObjects.get(i).process(controlOutput);
 
     return controlOutput;
+  }
+
+  @Override
+  protected void display() 
+  {
+    for (var object : fieldObjects)
+      object.displayCheck();
+  }
+
+  @Override
+  protected void stopDisplay() 
+  {
+    for (var object : fieldObjects)
+    {
+      object.stopDisplay();
+      object.displaying = false;
+    }
   }
 }

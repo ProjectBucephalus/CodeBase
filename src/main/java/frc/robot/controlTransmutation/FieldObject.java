@@ -32,6 +32,8 @@ public abstract class FieldObject implements InputTransmuter
   /** Distance at which further processing is required, metres */
   protected double checkRadius;
 
+  protected boolean displaying = false;
+
   /** Condition for the object to be active, if the return is false the object will return the input */
   protected BooleanSupplier activeSupplier = () -> true;
   /** Condition for ALL objects to be active, if the return is false the object will return the input */
@@ -122,4 +124,34 @@ public abstract class FieldObject implements InputTransmuter
    */
   public static void setGlobalActiveCondition(BooleanSupplier newActiveCondition)
     {globalActiveSupplier = newActiveCondition;}
+
+  /**
+   * Update whether this object is displaying on the dashboard field. 
+   * 
+   * @implNote
+   * The name of the displayed object may change between runs of the code.
+   */
+  public final void displayCheck()
+  {
+    var active = globalActiveSupplier.getAsBoolean() && activeSupplier.getAsBoolean();
+    if (displaying != active) 
+    {
+      if (active)
+        display();
+      else
+        stopDisplay();
+      displaying = active;
+    }
+  }
+
+  /**
+   * Display this object on the dashboard field.
+   * 
+   * @implNote
+   * The name of the displayed object may change between runs of the code.
+   */
+  protected abstract void display();
+
+  /** Stop displaying this object on the dashboard field. */
+  protected abstract void stopDisplay();
 }

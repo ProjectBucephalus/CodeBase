@@ -112,7 +112,7 @@ public record Path(double throttle, Node... nodes)
 
   public void display(String fieldObject)
   {
-    var poses = Arrays.stream(nodes).map(Node::pose).toArray(Pose2d[]::new);
+    var poses = Arrays.stream(nodes).map(node -> node.pose().getTranslation()).toArray(Translation2d[]::new);
     PBDash.addToFieldObject(fieldObject, poses);
   }
 

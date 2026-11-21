@@ -1,6 +1,7 @@
 package frc.robot.controlTransmutation.triggerObject;
 
 import edu.wpi.first.math.geometry.Translation2d;
+import frc.robot.util.PBDash;
 
 import static frc.robot.constants.FieldConstants.GeoFencing.*;
 
@@ -10,10 +11,10 @@ import static frc.robot.constants.FieldConstants.GeoFencing.*;
  */
 public class BoxRegion extends TriggerRegion 
 {
-  private double Xa;
-  private double Ya;
-  private double Xb;
-  private double Yb;
+  private double xA;
+  private double yA;
+  private double xB;
+  private double yB;
 
   /**
    * Rectangle shaped region
@@ -28,10 +29,10 @@ public class BoxRegion extends TriggerRegion
   {
     super(new Translation2d((xA + xB)/2, (yA + yB)/2), radius, buffer);
 
-    this.Xa = Math.min(xA, xB);
-    this.Ya = Math.min(yA, yB);
-    this.Xb = Math.max(xA, xB);
-    this.Yb = Math.max(yA, yB);
+    this.xA = Math.min(xA, xB);
+    this.yA = Math.min(yA, yB);
+    this.xB = Math.max(xA, xB);
+    this.yB = Math.max(yA, yB);
 
     checkRadius = (Math.hypot(xB - xA, yB - yA)/2) + radius + buffer;
   }
@@ -43,31 +44,31 @@ public class BoxRegion extends TriggerRegion
    * @param xB X-coordinate of the second point
    * @param yB Y-coordinate of the second point
    */
-  public BoxRegion(double Xa, double Ya, double Xb, double Yb)
-    {this(Xa, Ya, Xb, Yb, minRadius, minBuffer);}
+  public BoxRegion(double xA, double yA, double xB, double yB)
+    {this(xA, yA, xB, yB, minRadius, minBuffer);}
 
   @Override
   public double getDistance(Translation2d testPos)
   {
     double distance = 0;
 
-    if (testPos.getX() < Xa)
+    if (testPos.getX() < xA)
     {
-      if (testPos.getY() < Ya)
-        {distance = Math.hypot(Xa - testPos.getX(), Ya - testPos.getY());}
-      else if (testPos.getY() > Yb)
-        {distance = Math.hypot(Xa - testPos.getX(), testPos.getY() - Yb);}
+      if (testPos.getY() < yA)
+        {distance = Math.hypot(xA - testPos.getX(), yA - testPos.getY());}
+      else if (testPos.getY() > yB)
+        {distance = Math.hypot(xA - testPos.getX(), testPos.getY() - yB);}
       else 
-        {distance = Xa - testPos.getX();}
+        {distance = xA - testPos.getX();}
     }
-    else if (testPos.getX() > Xb)
+    else if (testPos.getX() > xB)
     {
-      if (testPos.getY() < Ya)
-        {distance = Math.hypot(testPos.getX() - Xb, Ya - testPos.getY());}
-      else if (testPos.getY() > Yb)
-        {distance = Math.hypot(testPos.getX() - Xb, testPos.getY() - Yb);}
+      if (testPos.getY() < yA)
+        {distance = Math.hypot(testPos.getX() - xB, yA - testPos.getY());}
+      else if (testPos.getY() > yB)
+        {distance = Math.hypot(testPos.getX() - xB, testPos.getY() - yB);}
       else
-        {distance = testPos.getX() - Xb;}
+        {distance = testPos.getX() - xB;}
     }
     else
     {
@@ -75,17 +76,42 @@ public class BoxRegion extends TriggerRegion
       (
         Math.max
         (
-          Xa - testPos.getX(), 
-          Ya - testPos.getY()
+          xA - testPos.getX(), 
+          yA - testPos.getY()
         ),
         Math.max
         (
-          testPos.getX() - Xb, 
-          testPos.getY() - Yb
+          testPos.getX() - xB, 
+          testPos.getY() - yB
         )
       );
     }
 
     return distance - radius;
+  }
+
+  @Override
+  public void display() 
+  {
+    var points = new Translation2d[] 
+    {
+      // Bottom left
+      new Translation2d(xA - radius, yA),
+      new Translation2d(xA, yA - radius),
+      // Bottom right
+      new Translation2d(xB, yA - radius),
+      new Translation2d(xB + radius, yA),
+      // Top right
+      new Translation2d(xB + radius, yB),
+      new Translation2d(xB, yB + radius),
+      // Top left
+      new Translation2d(xA, yB + radius),
+      new Translation2d(xA - radius, yB),
+      // Bottom left
+      new Translation2d(xA - radius, yA),
+      new Translation2d(xA, yA - radius),
+    };
+
+    PBDash.putFieldObject(displayName, points);
   }
 }

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import java.util.stream.Stream;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -48,21 +49,21 @@ public class Polygon extends GeoFence
     var initalPoint = new Translation2d(x, y + radius).rotateAround(centre, Rotation2d.fromDegrees(theta));
 
     // Line endpoints are equidistant around a circle
-    var pointAngle = Rotation2d.fromDegrees(360.0 / (sides*2));
+    var pointAngle = Rotation2d.fromDegrees(360.0 / (sides * 2));
 
     // Starting with the initial point, each subsequent point is equal to the previous point rotated by the angle
     // Extra point between each line terminator point for the line midpoint
     var polygonPoints = Stream
       .iterate(initalPoint, prev -> prev.rotateAround(centre, pointAngle))
-      .limit(2 * sides + 2)
+      .limit(sides * 2 + 1l)
       .toList();
     
     for (int i = 0; i < sides; i++)
     {
       edgeLines[i] = new Line
       (
-        polygonPoints.get(2*i),
-        polygonPoints.get(2*i + 2),
+        polygonPoints.get(2 * i),
+        polygonPoints.get(2 * i + 2),
         0,
         buffer
       );
@@ -159,5 +160,17 @@ public class Polygon extends GeoFence
     for (var edge : edgeLines)
       edge.addRelativeAttractor(false, normalOffset, tangentOffset, effectRadius, targetBuffer, activeCondition);
     return this;
+  }
+
+  @Override
+  public void display()
+  {
+    for (var line : edgeLines) line.display();
+  }
+
+  @Override
+  protected void stopDisplay() 
+  {
+    for (var line : edgeLines) line.stopDisplay();
   }
 }
