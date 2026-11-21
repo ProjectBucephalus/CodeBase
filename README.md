@@ -109,8 +109,8 @@ GeoFence
 - Built from videogame collision detection logic, using vision localisation and swerve drive.
 - Efficiently calculates the distance between the robot and the object, and reduces the component of the input in that direction down to 0 when the robot is in contact with it.
 - Various shapes exist with their own processing behaviour.
-- `Radius` defines the extent of the object beyond the simple geometry.
-- `Buffer` defines the distance from the object where the robot starts to be affected.
+- `radius` defines the extent of the object beyond the simple geometry.
+- `buffer` defines the distance from the object where the robot starts to be affected.
 
 TriggerObject
 - Derived from GeoFence objects, primarily checks if the robot is within the area to allow for location-based triggers.
@@ -158,19 +158,19 @@ PositionMotor
   - `atTarget()` check whether the motor within 0.1 of its target, using the value returned by `getTarget()` and `getPosition()`.
   - `stop()` sets motor output to zero.
   - `devicesValid()` check the motor connection.
-- Stimultion:
+- Simulation:
   - Using DCMotorSim to caculated movement from the simulated motor voltage.
   - simulationPeriodic() updated the simulated motor position every simulation cycle.
   - Feeds simulated position back to the TalonFX motor.
 
 EndLimitedMotor
--A motor with limited range with an endstop sensor at one end
+- A motor with limited range, with an endstop sensor at one end of travel.
 
 LimitedMotor
--Same as EndLimitedMotor, except the sensor can be anywhere along the motors range
+- Same as `EndLimitedMotor`, except the sensor can be anywhere along the range of travel.
 
 LinearExtension
-- 
+- Wrapper around `PositionMotor` converting angles to linear distances with configurable ratio.
 
 VelocityMotor
 - Wrapper around a TalonFX motor for position control using Motion Magic.
@@ -184,7 +184,6 @@ VelocityMotor
   - Using DCMotorSim to caculated movement from the simulated motor voltage.
   - simulationPeriodic() updated the simulated motor velocity every simulation cycle.
   - Feeds simulated velocity back to the TalonFX motor.
-
 
 BiMotor
 - Extend VelocityMotor to control two TalonFX motors together.
@@ -211,4 +210,3 @@ CommandGen
 - Contains the code to generate commands from input tokens
 - Check TODO marks in ParsedRepr.java to add new instruction options to the list
 - Check TODO marks in CommandGen.java to impliment new instruction options
-
