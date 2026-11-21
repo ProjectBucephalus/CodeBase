@@ -53,7 +53,7 @@ public class CommandGen
   {
     commands = new SequentialCommandGroup();
     currPose = FieldUtils.allianceRotatePose(state.swerve.Pose);
-    PBDash.putFieldObject("Auto Path", currPose);
+    PBDash.putFieldObject("Auto Path", currPose.getTranslation());
 
     // Iterate over each instruction, calling a seperate function that handles the actual compilation logic and handling any errors that arise
     // This design means that the actual compilation logic is seperated from the error handling, and doesn't have to consider them
@@ -187,7 +187,7 @@ public class CommandGen
     currPose = new Pose2d(new Translation2d(x, y), rotationTarget);
     Pose2d targetPose = FieldUtils.allianceRotatePose(currPose);
 
-    PBDash.addToFieldObject("Auto Path", targetPose);
+    PBDash.addToFieldObject("Auto Path", targetPose.getTranslation());
     // All prior handling was done using a blue alliance origin pose, and we now rotate the pose to match our actual alliance
     commands.addCommands(DriveBuilder.pathFollow(targetPose, nextIsDrive));
   }
@@ -201,7 +201,7 @@ public class CommandGen
     // All prior handling was done using a blue alliance origin pose, and we now rotate the pose to match our actual alliance
     Pose2d targetPose = FieldUtils.allianceRotatePose(currPose);
 
-    PBDash.addToFieldObject("Auto Path", targetPose);
+    PBDash.addToFieldObject("Auto Path", targetPose.getTranslation());
 
     commands.addCommands(DriveBuilder.pathFollow(targetPose, nextIsDrive));
   }

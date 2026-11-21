@@ -14,10 +14,10 @@ import static frc.robot.constants.FieldConstants.GeoFencing.*;
  */
 public class Fence extends GeoFence
 {
-  private double Xa;
-  private double Ya;
-  private double Xb;
-  private double Yb;
+  private double xA;
+  private double yA;
+  private double xB;
+  private double yB;
 
   /**
    * Wall shaped GeoFence
@@ -28,17 +28,17 @@ public class Fence extends GeoFence
    * @param radius Extra radius of geofence zone on the inner walls of the fence
    * @param buffer Buffer within the walls over which the speed is reduced
    */
-  public Fence(double Xa, double Ya, double Xb, double Yb, double radius, double buffer)
+  public Fence(double xA, double yA, double xB, double yB, double radius, double buffer)
   {
-    this.Xa = Math.min(Xa, Xb);
-    this.Ya = Math.min(Ya, Yb);
-    this.Xb = Math.max(Xa, Xb);
-    this.Yb = Math.max(Ya, Yb);
+    this.xA = Math.min(xA, xB);
+    this.yA = Math.min(yA, yB);
+    this.xB = Math.max(xA, xB);
+    this.yB = Math.max(yA, yB);
 
     this.radius = radius;
     this.buffer = buffer;
 
-    centre = new Translation2d((Xa + Xb)/2, (Ya + Yb)/2);
+    centre = new Translation2d((xA + xB)/2, (yA + yB)/2);
 
     checkRadius = radius + buffer;
   }
@@ -50,9 +50,9 @@ public class Fence extends GeoFence
    * @param xB X-coordinate of the second point
    * @param yB Y-coordinate of the second point
    */
-  public Fence(double Xa, double Ya, double Xb, double Yb)
+  public Fence(double xA, double yA, double xB, double yB)
   {
-    this(Xa, Ya, Xb, Yb, minRadius, minBuffer);
+    this(xA, yA, xB, yB, minRadius, minBuffer);
   }
 
   @Override
@@ -62,8 +62,8 @@ public class Fence extends GeoFence
     (
       Math.min
       (
-        Math.min(testPos.getX() - (Xa + radius), (Xb - radius) - testPos.getX()),
-        Math.min((Yb - radius) - testPos.getY(), testPos.getY() - (Ya + radius))
+        Math.min(testPos.getX() - (xA + radius), (xB - radius) - testPos.getX()),
+        Math.min((yB - radius) - testPos.getY(), testPos.getY() - (yA + radius))
       )
     );
   }
@@ -73,10 +73,10 @@ public class Fence extends GeoFence
   {
     return
     (
-      (robotPos.getX() >= Xb - (checkRadius + robotRadius)) ||  // Close to inside of +X barrier
-      (robotPos.getX() <= Xa + (checkRadius + robotRadius)) ||  // Close to inside of -X barrier
-      (robotPos.getY() >= Yb - (checkRadius + robotRadius)) ||  // Close to inside of +Y barrier
-      (robotPos.getY() <= Ya + (checkRadius + robotRadius))     // Close to inside of -Y barrier
+      (robotPos.getX() >= xB - (checkRadius + robotRadius)) ||  // Close to inside of +X barrier
+      (robotPos.getX() <= xA + (checkRadius + robotRadius)) ||  // Close to inside of -X barrier
+      (robotPos.getY() >= yB - (checkRadius + robotRadius)) ||  // Close to inside of +Y barrier
+      (robotPos.getY() <= yA + (checkRadius + robotRadius))     // Close to inside of -Y barrier
     );
   }
 
@@ -99,46 +99,52 @@ public class Fence extends GeoFence
     
     if (motionX > 0)
     {   
-      distanceToEdgeX = (Xb - radius) - (robotPos.getX() + robotRadius); 
+      distanceToEdgeX = (xB - radius) - (robotPos.getX() + robotRadius); 
       motionX = Math.min(motionX, (Conversions.clamp(distanceToEdgeX, 0, buffer)) / buffer);
     }
     else if (motionX < 0)
     {   
-      distanceToEdgeX = (robotPos.getX() - robotRadius) - (Xa + radius);
+      distanceToEdgeX = (robotPos.getX() - robotRadius) - (xA + radius);
       motionX = Math.max(motionX, (-Conversions.clamp(distanceToEdgeX, 0, buffer)) / buffer);
     }
 
     if (motionY > 0)
     {   
-      distanceToEdgeY = (Yb - radius) - (robotPos.getY() + robotRadius);
+      distanceToEdgeY = (yB - radius) - (robotPos.getY() + robotRadius);
       motionY = Math.min(motionY, (Conversions.clamp(distanceToEdgeY, 0, buffer)) / buffer);
     }
     else if (motionY < 0)
     {   
-      distanceToEdgeY = (robotPos.getY() - robotRadius) - (Ya + radius);
+      distanceToEdgeY = (robotPos.getY() - robotRadius) - (yA + radius);
       motionY = Math.max(motionY, (-Conversions.clamp(distanceToEdgeY, 0, buffer)) / buffer);
     }
 
     // Check for collision
-    if(distanceToEdgeX <= 0.05 || distanceToEdgeY <= 0.05)
+    if (distanceToEdgeX <= 0.05 || distanceToEdgeY <= 0.05)
     {
       touchingObject = true; 
-      PBDash.addToFieldObject
-      (
-        "Blocking Object", 
-        Conversions.buildPose(Xa, Ya, 0),
-        Conversions.buildPose(Xb, Ya, 0),
-        Conversions.buildPose(Xb, Yb, 0),
-        Conversions.buildPose(Xa, Yb, 0),
-        Conversions.buildPose(Xa, Ya, 0),
-        Conversions.buildPose(Xa + radius, Ya + radius, 0),
-        Conversions.buildPose(Xb - radius, Ya + radius, 0),
-        Conversions.buildPose(Xb - radius, Yb - radius, 0),
-        Conversions.buildPose(Xa + radius, Yb - radius, 0),
-        Conversions.buildPose(Xa + radius, Ya + radius, 0)
-      );
     } 
 
     return new Translation2d(motionX, motionY);
+  }
+
+  @Override
+  public void display() 
+  {
+    var points = new Translation2d[] 
+    {
+      // Bottom left
+      new Translation2d(xA, yA),
+      // Bottom right
+      new Translation2d(xB, yA),
+      // Top right
+      new Translation2d(xB, yB),
+      // Top left
+      new Translation2d(xA, yB),
+      // Bottom left
+      new Translation2d(xA, yA),
+    };
+
+    PBDash.putFieldObject(displayName, points);
   }
 }

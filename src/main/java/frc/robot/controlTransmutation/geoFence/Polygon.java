@@ -160,4 +160,16 @@ public class Polygon extends GeoFence
       edge.addRelativeAttractor(false, normalOffset, tangentOffset, effectRadius, targetBuffer, activeCondition);
     return this;
   }
+
+  @Override
+  public void display()
+  {
+    for (var line : edgeLines) line.display();
+  }
+
+  @Override
+  protected void stopDisplay() 
+  {
+    for (var line : edgeLines) line.stopDisplay();
+  }
 }

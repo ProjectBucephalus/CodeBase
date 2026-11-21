@@ -23,6 +23,8 @@ import static frc.robot.constants.Constants.ControlConstants.maxAngleTolerance;
  */
 public class TriggerVector extends FieldObject
 {
+  private final String displayName = getClass().getSimpleName() + hashCode();
+
   /** Angle of the robot motion for the final approach, degrees */
   protected double approachHeading;
   /** Angle of the robot motion for the final approach */
@@ -48,18 +50,17 @@ public class TriggerVector extends FieldObject
 
   private Rotation2d lastInputAngle = Rotation2d.kZero;
 
-
   /**
    * Trigger monitoring if the control input is towards the target within a certain tollerance
-   * @param X x-coordinate of the target
-   * @param Y y-coordinate of the target
+   * @param x x-coordinate of the target
+   * @param y y-coordinate of the target
    * @param approachHeading direction the robot should move to approach the target, degrees anticlockwise
    * @param effectRadius distance from target where the trigger will activate
    * @param targetBuffer distance from the target where the robot is too close to activate the trigger (but can stay active)
    */
-  public TriggerVector(double X, double Y, double approachHeading, double effectRadius, double targetBuffer)
+  public TriggerVector(double x, double y, double approachHeading, double effectRadius, double targetBuffer)
   {
-    centre = new Translation2d(X, Y);
+    centre = new Translation2d(x, y);
     this.approachHeading = approachHeading;
     radius = effectRadius;
     buffer = targetBuffer;
@@ -112,7 +113,7 @@ public class TriggerVector extends FieldObject
     {
       lastInputAngle = controlInput.getAngle();
       onTarget = true;
-      PBDash.putFieldObject("Active Trigger Vector", centrePose);
+      PBDash.putFieldObject("Active Trigger Vector", centrePose.getTranslation());
     }
     else
     {
@@ -191,5 +192,21 @@ public class TriggerVector extends FieldObject
   {
     this.bufferActivation = bufferActivation;
     return this;
+  }
+
+  @Override
+  protected void display() 
+  {
+    var startPoint = centre.minus(new Translation2d(radius, approachHeadingRotation));
+    var leftArrowPoint = frontCheckpoint.rotateAround(centre, Rotation2d.fromDegrees(minAngleTolerance));
+    var rightArrowPoint = frontCheckpoint.rotateAround(centre, Rotation2d.fromDegrees(-minAngleTolerance));
+
+    PBDash.putFieldObject(displayName, startPoint, centre, leftArrowPoint, centre, rightArrowPoint);
+  }
+
+  @Override
+  protected void stopDisplay() 
+  {
+    PBDash.removeFieldObject(displayName);
   }
 }
