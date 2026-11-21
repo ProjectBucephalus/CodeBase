@@ -80,4 +80,16 @@ public class PolygonRegion extends TriggerRegion
       .min(Comparator.comparingDouble(line -> line.getCentre().getDistance(robotPos)))
       .orElseThrow();
   }
+
+  @Override
+  public void display()
+  {
+    for (var line : polygonLines) line.display();
+  }
+
+  @Override
+  protected void stopDisplay() 
+  {
+    for (var line : polygonLines) line.stopDisplay();
+  }
 }

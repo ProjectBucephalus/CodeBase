@@ -1,6 +1,8 @@
 package frc.robot.controlTransmutation.geoFence;
 
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import frc.robot.util.PBDash;
 
 import static frc.robot.constants.FieldConstants.GeoFencing.*;
 
@@ -41,5 +43,23 @@ public class Point extends GeoFence
   protected Translation2d dampMotion(Translation2d motionXY)
   {
     return pointDamping(centre.getX(), centre.getY(), motionXY);
+  }
+
+  @Override
+  public void display() 
+  {
+    var points = new Translation2d[9];
+
+    var initalPoint = new Translation2d(centre.getX(), centre.getY() + radius);
+    var pointAngle = Rotation2d.fromDegrees(45);
+
+    for (int i = 0; i < 8; i++)
+    {
+      points[i] = initalPoint.rotateAround(centre, pointAngle.times(i));
+    }
+
+    points[8] = initalPoint;
+      
+    PBDash.putFieldObject(displayName, points);
   }
 }

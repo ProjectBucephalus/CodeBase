@@ -6,6 +6,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import frc.robot.controlTransmutation.triggerObject.TriggerVector;
 import frc.robot.util.Conversions;
+import frc.robot.util.PBDash;
 
 import static frc.robot.constants.FieldConstants.GeoFencing.*;
 
@@ -137,5 +138,11 @@ public class Line extends GeoFence
     newAttractor.setActiveCondition(activeCondition);
     addAttractors(newAttractor);
     return this;
+  }
+
+  @Override
+  public void display()
+  {
+    PBDash.putFieldObject(displayName, pointA, pointB);
   }
 }

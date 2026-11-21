@@ -13,10 +13,10 @@ import static frc.robot.constants.FieldConstants.GeoFencing.*;
  */
 public class Box extends GeoFence
 {
-  private double Xa;
-  private double Ya;
-  private double Xb;
-  private double Yb;
+  private double xA;
+  private double yA;
+  private double xB;
+  private double yB;
 
   /**
    * Rectangle shaped GeoFence
@@ -27,19 +27,19 @@ public class Box extends GeoFence
    * @param radius Extra radius of geofence zone around the box (produces a rounded rectangle shape)
    * @param buffer Buffer around the object over which the speed is reduced
    */
-  public Box(double Xa, double Ya, double Xb, double Yb, double radius, double buffer)
+  public Box(double xA, double yA, double xB, double yB, double radius, double buffer)
   {
-    this.Xa = Math.min(Xa, Xb);
-    this.Ya = Math.min(Ya, Yb);
-    this.Xb = Math.max(Xa, Xb);
-    this.Yb = Math.max(Ya, Yb);
+    this.xA = Math.min(xA, xB);
+    this.yA = Math.min(yA, yB);
+    this.xB = Math.max(xA, xB);
+    this.yB = Math.max(yA, yB);
 
     this.radius = radius;
     this.buffer = buffer;
 
-    centre = new Translation2d((Xa + Xb)/2, (Ya + Yb)/2);
+    centre = new Translation2d((xA + xB)/2, (yA + yB)/2);
 
-    checkRadius = (Math.hypot(Xb - Xa, Yb - Ya)/2) + radius + buffer;
+    checkRadius = (Math.hypot(xB - xA, yB - yA)/2) + radius + buffer;
   }
 
   /**
@@ -49,9 +49,9 @@ public class Box extends GeoFence
    * @param xB X-coordinate of the second point
    * @param yB Y-coordinate of the second point
    */
-  public Box(double Xa, double Ya, double Xb, double Yb)
+  public Box(double xA, double yA, double xB, double yB)
   {
-    this(Xa, Ya, Xb, Yb, minRadius, minBuffer);
+    this(xA, yA, xB, yB, minRadius, minBuffer);
   }
 
   @Override
@@ -59,23 +59,23 @@ public class Box extends GeoFence
   {
     double distance = 0;
 
-    if (testPos.getX() < Xa)
+    if (testPos.getX() < xA)
     {
-      if (testPos.getY() < Ya) // SW Corner
-        {distance = Math.hypot(Xa - testPos.getX(), Ya - testPos.getY());}
-      else if (testPos.getY() > Yb) // NW Corner
-        {distance = Math.hypot(Xa - testPos.getX(), testPos.getY() - Yb);}
+      if (testPos.getY() < yA) // SW Corner
+        {distance = Math.hypot(xA - testPos.getX(), yA - testPos.getY());}
+      else if (testPos.getY() > yB) // NW Corner
+        {distance = Math.hypot(xA - testPos.getX(), testPos.getY() - yB);}
       else // W Cardinal
-        {distance = Xa - testPos.getX();}
+        {distance = xA - testPos.getX();}
     }
-    else if (testPos.getX() > Xb)
+    else if (testPos.getX() > xB)
     {
-      if (testPos.getY() < Ya) // SE Corner
-        {distance = Math.hypot(testPos.getX() - Xb, Ya - testPos.getY());}
-      else if (testPos.getY() > Yb) // NE Corner
-        {distance = Math.hypot(testPos.getX() - Xb, testPos.getY() - Yb);}
+      if (testPos.getY() < yA) // SE Corner
+        {distance = Math.hypot(testPos.getX() - xB, yA - testPos.getY());}
+      else if (testPos.getY() > yB) // NE Corner
+        {distance = Math.hypot(testPos.getX() - xB, testPos.getY() - yB);}
       else // E Cardinal
-        {distance = testPos.getX() - Xb;}
+        {distance = testPos.getX() - xB;}
     }
     else
     {
@@ -84,13 +84,13 @@ public class Box extends GeoFence
       (
         Math.max
         (
-          Xa - testPos.getX(), 
-          Ya - testPos.getY()
+          xA - testPos.getX(), 
+          yA - testPos.getY()
         ),
         Math.max
         (
-          testPos.getX() - Xb, 
-          testPos.getY() - Yb
+          testPos.getX() - xB, 
+          testPos.getY() - yB
         )
       );
     }
@@ -106,40 +106,40 @@ public class Box extends GeoFence
     double motionY = motionXY.getY();
     double distanceToEdge;
 
-    if (robotPos.getX() < Xa)
+    if (robotPos.getX() < xA)
     {
-      if (robotPos.getY() < Ya) // SW Corner
-        {return pointDamping(Xa, Ya, motionXY);}
-      else if (robotPos.getY() > Yb) // NW Corner
-        {return pointDamping(Xa, Yb, motionXY);}
+      if (robotPos.getY() < yA) // SW Corner
+        {return pointDamping(xA, yA, motionXY);}
+      else if (robotPos.getY() > yB) // NW Corner
+        {return pointDamping(xA, yB, motionXY);}
       else // W Cardinal
       {
-        distanceToEdge = (Xa - radius) - (robotPos.getX() + robotRadius);
+        distanceToEdge = (xA - radius) - (robotPos.getX() + robotRadius);
         motionX = Math.min(motionX, (Conversions.clamp(distanceToEdge, 0, buffer)) / buffer);
       }
     }
-    else if (robotPos.getX() > Xb)
+    else if (robotPos.getX() > xB)
     {
-      if (robotPos.getY() < Ya) // SE Corner
-        {return pointDamping(Xb, Ya, motionXY);}
-      else if (robotPos.getY() > Yb) // NE Corner
-        {return pointDamping(Xb, Yb, motionXY);}
+      if (robotPos.getY() < yA) // SE Corner
+        {return pointDamping(xB, yA, motionXY);}
+      else if (robotPos.getY() > yB) // NE Corner
+        {return pointDamping(xB, yB, motionXY);}
       else // E Cardinal
       {
-        distanceToEdge = (robotPos.getX() - robotRadius) - (Xb + radius);
+        distanceToEdge = (robotPos.getX() - robotRadius) - (xB + radius);
         motionX = Math.max(motionX, (-Conversions.clamp(distanceToEdge, 0, buffer)) / buffer);
       }
     }
     else 
     {
-      if (robotPos.getY() < Ya) // S Cardinal
+      if (robotPos.getY() < yA) // S Cardinal
       {
-        distanceToEdge = (Ya - radius) - (robotPos.getY() + robotRadius);
+        distanceToEdge = (yA - radius) - (robotPos.getY() + robotRadius);
         motionY = Math.min(motionY, (Conversions.clamp(distanceToEdge, 0, buffer)) / buffer);
       } 
-      else if (robotPos.getY() > Yb) // N Cardinal
+      else if (robotPos.getY() > yB) // N Cardinal
       {
-        distanceToEdge = (robotPos.getY() - robotRadius) - (Yb + radius);
+        distanceToEdge = (robotPos.getY() - robotRadius) - (yB + radius);
         motionY = Math.max(motionY, (-Conversions.clamp(distanceToEdge, 0, buffer)) / buffer);
       }
       else // Center (you've met a terrible fate *insert kazoo music here*)
@@ -150,21 +150,33 @@ public class Box extends GeoFence
     if (distanceToEdge <= 0.05)
     {
       touchingObject = true; 
-      PBDash.addToFieldObject
-      (
-        "Blocking Object", 
-        Conversions.buildPose(Xa, Ya, 0),
-        Conversions.buildPose(Xb, Ya, 0),
-        Conversions.buildPose(Xb, Yb, 0),
-        Conversions.buildPose(Xa, Yb, 0),
-        Conversions.buildPose(Xa, Ya, 0),
-        Conversions.buildPose(Xa - radius, Ya - radius, 0),
-        Conversions.buildPose(Xb + radius, Ya - radius, 0),
-        Conversions.buildPose(Xb + radius, Yb + radius, 0),
-        Conversions.buildPose(Xa - radius, Yb + radius, 0),
-        Conversions.buildPose(Xa - radius, Ya - radius, 0)
-      );
     } 
+
     return new Translation2d(motionX, motionY);
+  }
+
+  @Override
+  public void display() 
+  {
+    var points = new Translation2d[] 
+    {
+      // Bottom left
+      new Translation2d(xA - radius, yA),
+      new Translation2d(xA, yA - radius),
+      // Bottom right
+      new Translation2d(xB, yA - radius),
+      new Translation2d(xB + radius, yA),
+      // Top right
+      new Translation2d(xB + radius, yB),
+      new Translation2d(xB, yB + radius),
+      // Top left
+      new Translation2d(xA, yB + radius),
+      new Translation2d(xA - radius, yB),
+      // Bottom left
+      new Translation2d(xA - radius, yA),
+      new Translation2d(xA, yA - radius),
+    };
+
+    PBDash.putFieldObject(displayName, points);
   }
 }
