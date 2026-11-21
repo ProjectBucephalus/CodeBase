@@ -31,8 +31,8 @@ public class InputCurve implements InputTransmuter
   public Translation2d process(Translation2d controlInput)
   {
     double norm = controlInput.getNorm();
-    double scale = Math.pow(norm, power - 1);
-    return controlInput.times(scale);
+    double scaled = Math.pow(norm, power - 1);
+    return controlInput.times(scaled);
 
     // return Conversions.clamp
     // (
