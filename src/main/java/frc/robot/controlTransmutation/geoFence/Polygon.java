@@ -5,8 +5,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
-import java.util.stream.Stream;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -49,24 +47,14 @@ public class Polygon extends GeoFence
     var initalPoint = new Translation2d(x, y + radius).rotateAround(centre, Rotation2d.fromDegrees(theta));
 
     // Line endpoints are equidistant around a circle
-    var pointAngle = Rotation2d.fromDegrees(360.0 / (sides * 2));
+    var pointAngle = Rotation2d.fromDegrees(360.0 / sides);
 
-    // Starting with the initial point, each subsequent point is equal to the previous point rotated by the angle
-    // Extra point between each line terminator point for the line midpoint
-    var polygonPoints = Stream
-      .iterate(initalPoint, prev -> prev.rotateAround(centre, pointAngle))
-      .limit(sides * 2 + 1l)
-      .toList();
-    
     for (int i = 0; i < sides; i++)
     {
-      edgeLines[i] = new Line
-      (
-        polygonPoints.get(2 * i),
-        polygonPoints.get(2 * i + 2),
-        0,
-        buffer
-      );
+      var point = initalPoint.rotateAround(centre, pointAngle.times(i));
+      var nextPoint = initalPoint.rotateAround(centre, pointAngle.times(i + 1));
+
+      edgeLines[i] = new Line(point, nextPoint, 0, buffer);
     }
       
     /* 
@@ -75,7 +63,7 @@ public class Polygon extends GeoFence
     * 
     * These values are used to process the polygon as a point if the robot crosses the lines
     */ 
-    this.radius = pointAngle.getCos() * radius;
+    this.radius = pointAngle.div(2).getCos() * radius;
     this.buffer = buffer + (radius - this.radius);
   }
 
@@ -84,7 +72,7 @@ public class Polygon extends GeoFence
   {
     Line processLine = nearestLine();
     // If the robot is inside the polygon, process based on the inscribed circle
-    if (processLine.getDirectionalDistance() < 0)
+    if (processLine.getDirectionalDistance() < -(radius / 4))
       return pointDamping(centre.getX(), centre.getY(), motionXY);
     else 
       /* 
