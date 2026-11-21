@@ -71,29 +71,51 @@ Patterns
 
 # ControlTransmutation #
 JoystickTransmuter
-- Interface for modifying the output of a joystick
-- Define with supplier for each joystick axis, return is a Translation2d combining both
+- Interface for modifying the output of a joystick.
+- Define with supplier for each joystick axis, return is a Translation2d combining both.
+- Takes in all other transmuter layers, and processes them in order:
+  1. Rotation
+  2. Deadband
+  3. InputCurve
+  4. Brake
+  5. FieldObjectList
 
 Brake
-- 
+- Defined with additional axis (or other supplier) to scale joystick output
 
 Deadband
-- 
+- Clamps joystick value to `0` when below deadband limit.
+- Rescales output to be [0..1] rather than [limit..1]
 
 CrossDeadband
-- 
+- Restricts output to whichever axis is greater, allowing for cardinal movement.
+- Configurable overlap region behaviour:
+  - `<1` - Deadband between axis, can only move if stick is close to an axis
+  - `>1` - Overlapping regions, giving smooth control unless close to an axis
+  - `=1` - Sharp change, control is only the closest axis
+- Also impliments a regular deadband at the centre.
 
 InputCurve
-- 
+- Simple power curve applied to joystick value.
+- Power `>1` gives more fine control
+- Power `<1` gives less fine control
+- Output always [-1..1] regardless of power
 
 Rotation
-- 
+- Arbitrarily rotates joystick input.
+- Can be configured to monitor a value from the dashboard.
 
 GeoFence
-- 
+- Built from videogame collision detection logic, using vision localisation and swerve drive.
+- Efficiently calculates the distance between the robot and the object, and reduces the component of the input in that direction down to 0 when the robot is in contact with it.
+- Various shapes exist with their own processing behaviour.
+- `Radius` defines the extent of the object beyond the simple geometry.
+- `Buffer` defines the distance from the object where the robot starts to be affected.
 
 TriggerObject
-- 
+- Derived from GeoFence objects, primarily checks if the robot is within the area to allow for location-based triggers.
+- Can apply a speed limit within the triggering area.
+- TriggerVector defines a target and approach heading; while driving towards the target, the trigger will activate, and remain active while holding that input.
 
 # Subsystems #
 CommandSwerveDrivetrain
