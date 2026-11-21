@@ -96,13 +96,19 @@ CommandSwerveDrivetrain
 - 
 
 RumbleRequester
-- 
+- Provides a convenient interface for managing a controller's rumble.
+- Each instance manages one side of one controller.
+- Operates on requests: Rumbles while there are any requests, when all requests are removed it stops rumbling.
+- Constructs a command that run the rumble request when scheduled and removes the request when finished.
 
 LEDStrip
 - 
 
 Vision/Limelight
-- 
+- Manages multiple photon or limelight cameras.
+- Removes unwanted or uncertain tags before calculating.
+- Estimates where on the field the robot is.
+- Updates the turret headings
 
 ## Generic ##
 BinaryMotor
