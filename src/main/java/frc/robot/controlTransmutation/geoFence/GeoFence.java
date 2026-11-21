@@ -23,6 +23,8 @@ public abstract class GeoFence extends FieldObject
   /** Flag to indicate per cycle if the robot is in contact with an active GeoFence object */
   protected static boolean touchingObject;
 
+  protected final String displayName = getClass().getSimpleName() + hashCode();
+
   // A list of object-relative attractors to check
   protected ArrayList<TriggerVector> attractors = new ArrayList<>();
 
@@ -35,12 +37,11 @@ public abstract class GeoFence extends FieldObject
    * @return the state of the flag before clearing
    */
   public static boolean clearBlocked()
-    {
-      boolean wasTouching = touchingObject;
-      touchingObject = false;
-      if (!wasTouching) PBDash.putFieldObject("Blocking Object");
-      return wasTouching;
-    }
+  {
+    boolean wasTouching = touchingObject;
+    touchingObject = false;
+    return wasTouching;
+  }
 
   /**
    * Adds one or more Attractor objects tied to the GeoFence object
@@ -53,20 +54,12 @@ public abstract class GeoFence extends FieldObject
     return this;
   }
 
-  /** Applies any contained attractors and then applies the geofencing */
+  /** Applies the geofencing. */
   @Override
   public Translation2d process(Translation2d controlInput)
   {
     if (globalActiveSupplier.getAsBoolean() && activeSupplier.getAsBoolean())
     {
-      // if (checkAttractors())
-      // {
-      //   var controlOutput = processAttractors(controlInput);
-      //   // If the attractors have not had any affect, we want to continue to the geofence checks rather than returning
-      //   if (!controlOutput.equals(controlInput))
-      //     return controlOutput;
-      // }
-
       if (checkPosition())
         return dampMotion(controlInput);
     }
@@ -123,11 +116,13 @@ public abstract class GeoFence extends FieldObject
     // Calculates X and Y distances to the point
     double distanceX = pointX - robotPos.getX();
     double distanceY = pointY - robotPos.getY();
+
     // Calculates the normal distance to the corner through pythagoras; this is the actual distance between the robot and point
     double distanceN = Math.hypot(distanceX, distanceY);
+
     // Calculates the robot's motion normal and tangent to the point; i.e., towards and away from the point, and from side to side relative to the point
-    double motionN   = ((distanceX * motionXY.getX()) + (distanceY * motionXY.getY())) / distanceN;
-    double motionT   = ((distanceX * motionXY.getY()) - (distanceY * motionXY.getX())) / distanceN;
+    double motionN = ((distanceX * motionXY.getX()) + (distanceY * motionXY.getY())) / distanceN;
+    double motionT = ((distanceX * motionXY.getY()) - (distanceY * motionXY.getX())) / distanceN;
     
     // Clamps the normal motion, i.e. motion towards the point, in order to clamp robot speed
     // Sets maximum input towards the object as:
@@ -137,26 +132,21 @@ public abstract class GeoFence extends FieldObject
                                     / (Math.max(Math.abs(distanceX),Math.abs(distanceY)) * buffer));
     
     // Converts clamped motion from normal back to X and Y
-    double motionX   = ((motionN * distanceX) - (motionT * distanceY)) / distanceN;
-    double motionY   = ((motionN * distanceY) + (motionT * distanceX)) / distanceN;
+    double motionX = ((motionN * distanceX) - (motionT * distanceY)) / distanceN;
+    double motionY = ((motionN * distanceY) + (motionT * distanceX)) / distanceN;
 
     // Check for collision
     if (distanceN <= 0.05 + robotRadius + radius) 
     {
       touchingObject = true; 
-      PBDash.addToFieldObject
-      (
-        "Blocking Object", 
-        Conversions.buildPose(pointX, pointY, 0),
-        Conversions.buildPose(pointX + radius, pointY, 0),
-        Conversions.buildPose(pointX, pointY + radius, 0),
-        Conversions.buildPose(pointX - radius, pointY, 0),
-        Conversions.buildPose(pointX, pointY - radius, 0),
-        Conversions.buildPose(pointX, pointY + radius, 0),
-        Conversions.buildPose(pointX + radius, pointY, 0),
-        Conversions.buildPose(pointX - radius, pointY, 0)
-      );
     }
+
     return new Translation2d(motionX, motionY);
+  }
+
+  @Override
+  protected void stopDisplay() 
+  {
+    PBDash.removeFieldObject(displayName);
   }
 }

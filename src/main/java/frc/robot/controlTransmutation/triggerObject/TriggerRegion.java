@@ -5,8 +5,11 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.controlTransmutation.FieldObject;
+import frc.robot.util.PBDash;
 
 import static frc.robot.constants.FieldConstants.GeoFencing.*;
+
+// TODO: Rework trigger hierarchy to match geofence
 
 /** 
  * Derived from GeoFence logic, acts as a position/distance check and trigger <p>
@@ -15,6 +18,8 @@ import static frc.robot.constants.FieldConstants.GeoFencing.*;
  */
 public class TriggerRegion extends FieldObject
 {
+  protected final String displayName = getClass().getSimpleName() + hashCode();
+
   protected double localSpeedLimit = 0;
 
   /**
@@ -103,5 +108,29 @@ public class TriggerRegion extends FieldObject
     }
 
     return controlInput;
+  }
+
+  @Override
+  protected void display() 
+  {
+    var points = new Translation2d[9];
+
+    var initalPoint = new Translation2d(centre.getX(), centre.getY() + radius);
+    var pointAngle = Rotation2d.fromDegrees(45);
+
+    for (int i = 0; i < 8; i++)
+    {
+      points[i] = initalPoint.rotateAround(centre, pointAngle.times(i));
+    }
+
+    points[8] = initalPoint;
+      
+    PBDash.putFieldObject(displayName, points);
+  }
+
+  @Override
+  protected void stopDisplay() 
+  {
+    PBDash.removeFieldObject(displayName);
   }
 }

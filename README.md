@@ -163,7 +163,13 @@ PositionMotor
   - simulationPeriodic() updated the simulated motor position every simulation cycle.
   - Feeds simulated position back to the TalonFX motor.
 
-LimitedMotor/LinearExtension
+EndLimitedMotor
+-A motor with limited range with an endstop sensor at one end
+
+LimitedMotor
+-Same as EndLimitedMotor, except the sensor can be anywhere along the motors range
+
+LinearExtension
 - 
 
 VelocityMotor
