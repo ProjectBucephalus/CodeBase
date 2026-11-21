@@ -93,7 +93,7 @@ TriggerObject
 
 # Subsystems #
 CommandSwerveDrivetrain
-- 
+- Constructs and handles the CTRE hardware devices
 
 RumbleRequester
 - Provides a convenient interface for managing a controller's rumble.
@@ -102,15 +102,15 @@ RumbleRequester
 - Constructs a command that run the rumble request when scheduled and removes the request when finished.
 
 LEDStrip
-- Controls all LED blocks and manages them
-- Knows all the blocks length
-- Renders the LED blocks and patterns
+- Owns all LED blocks and manages them.
+- Renders the LED blocks and patterns.
+- Knows all the LED block's length.
 
 Vision/Limelight
 - Manages multiple photon or limelight cameras.
 - Removes unwanted or uncertain tags before calculating.
 - Estimates where on the field the robot is.
-- Updates the turret headings
+- Updates the turret headings.
 
 ## Generic ##
 BinaryMotor
