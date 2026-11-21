@@ -3,8 +3,8 @@ List of available classes and brief descriptions of their functions
 # Util #
 AlliancePose2d/AllianceTranslation2d
 - Wrapper on base geometry classes. 
-- Input as Blue alliance version, use blue() or red() to get specific version
-- Use get() to get alliance specific version, based on driverstation alliance
+- Input as Blue alliance version, use `blue()` or `red()` to get specific version
+- Use `get()` to get alliance specific version, based on driverstation alliance
 
 Conversions
 - `mod(value, base)` returns mathematical modulus (default `%` operator doesn't handle negative correctly)
@@ -60,7 +60,7 @@ PBDash
 Block
 - A defined string of LEDs within the whole strip, defined by length
 - Has no internal reference to its position in the strip. Start position is given when render() is called by the `LEDStrip` subsystem
-- Has option to render first 4 LEDs to network tables (`setNetworkTableAddress(...)`)
+- `setNetworkTableAddress(...)` to render first 4 LEDs to network tables
 - Patterns can be applied to multiple blocks simultaneously
 
 Patterns
@@ -71,7 +71,8 @@ Patterns
 
 # ControlTransmutation #
 JoystickTransmuter
-- 
+- Interface for modifying the output of a joystick
+- Define with supplier for each joystick axis, return is a Translation2d combining both
 
 Brake
 - 
@@ -85,6 +86,9 @@ CrossDeadband
 InputCurve
 - 
 
+Rotation
+- 
+
 GeoFence
 - 
 
@@ -93,7 +97,7 @@ TriggerObject
 
 # Subsystems #
 CommandSwerveDrivetrain
-- 
+- Constructs and handles the CTRE hardware devices
 
 RumbleRequester
 - Provides a convenient interface for managing a controller's rumble.
@@ -102,29 +106,36 @@ RumbleRequester
 - Constructs a command that run the rumble request when scheduled and removes the request when finished.
 
 LEDStrip
-- 
+- Owns all LED blocks and manages them.
+- Renders the LED blocks and patterns.
+- Knows all the LED block's length.
 
 Vision/Limelight
 - Manages multiple photon or limelight cameras.
 - Removes unwanted or uncertain tags before calculating.
 - Estimates where on the field the robot is.
-- Updates the turret headings
+- Updates the turret headings.
 
 ## Generic ##
 BinaryMotor
-- 
+- Simplest interface for TalonFX motor
+- Define with default speed: `start()` runs motor at default speed, `stop()` stops motor
+- `setSpeed()` allows any speed to be used, if needed.
+- `runCmd()`/`startCmd()`/`reverseCmd()`/`stopCmd()`/`setSpeedCmd()` return command form of   
 
 PositionMotor
 - Wrapper around a TalonFX motor for position control using Motion Magic.
 - All positions and targets are measured in mechanicsm rotations.
-- setTarget() set the target position; baseSetTarget()sends the target directly to the motor, bypassing overridden setTarget() method in subclasses.
+- `setTarget()` set the target position; `baseSetTarget()`sends the target directly to the motor, bypassing overridden `setTarget()` method in subclasses.
 - Various commands for position control:
-  - setTargetCmd() set a target once, accepting either fixed value or DoubleSupplier.
-  - gotoTargetCmd() set a target and wait until the motor reaches it.
-  - adjustTargetCmd() continuously adjust the target by the supply amount, mainly use for joystick control.
-  - getAngle()/getPosition() return the current position; getTarget() returns the requested target.  
-  - atTarget() check whether the motor within 0.1 of its target, using the value returned by getTarget() and getPosition().
-  - stop() sets motor output to zero; devicesValid() check the motor connection.
+  - `setTargetCmd()` set a target once, accepting either fixed value or DoubleSupplier.
+  - `gotoTargetCmd()` set a target and wait until the motor reaches it.
+  - `adjustTargetCmd()` continuously adjust the target by the supply amount, mainly use for joystick control.
+  - `getAngle()`/`getPosition()` return the current position.
+  - `getTarget()` returns the requested target.  
+  - `atTarget()` check whether the motor within 0.1 of its target, using the value returned by `getTarget()` and `getPosition()`.
+  - `stop()` sets motor output to zero.
+  - `devicesValid()` check the motor connection.
 - Stimultion:
   - Using DCMotorSim to caculated movement from the simulated motor voltage.
   - simulationPeriodic() updated the simulated motor position every simulation cycle.

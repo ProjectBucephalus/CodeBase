@@ -1,10 +1,10 @@
 package frc.robot.util;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
-import java.util.stream.IntStream;
 
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
 
@@ -90,36 +90,39 @@ public class PBDash
   public static final Field2d      FIELD            = new Field2d();
   static { putSendable("Field", FIELD); }
 
-  public static void putFieldObject(String name, Translation2d point)
-    {FIELD.getObject(name).setPose(new Pose2d(point, Rotation2d.kZero));}
+  public static void putFieldObject(String name, Translation2d... points)
+  {
+    var object = FIELD.getObject(name);
+    // Some fast paths for specific lengths.
+    switch (points.length) 
+    {
+      case 0 -> object.setPoses();
+      case 1 -> object.setPose(new Pose2d(points[0], Rotation2d.kZero));
+      default -> 
+      {
+        var poses = new ArrayList<Pose2d>();
+        addPoints(poses, points);
+        object.setPoses(poses);
+      }
+    }
+  }
 
-  public static void putFieldObject(String name, Pose2d... poses)
-    {FIELD.getObject(name).setPoses(poses);}
-
-  public static void addToFieldObject(String name, Pose2d... newPoses)
+  public static void addToFieldObject(String name, Translation2d... points)
   {
     var object = FIELD.getObject(name);
     var poses = object.getPoses();
-    // Elastic only displays a trajectory for objects with 8+ poses, so we add the first pose a bunch of times to force it
-    for (int i = 0; i < 9 - poses.size(); i++) poses.add(newPoses[0]);
-    poses.addAll(List.of(newPoses));
+    addPoints(poses, points);
     object.setPoses(poses);
   }
 
-  public static void putFieldPath(String name, Pose2d start, Pose2d end)
+  private static void addPoints(List<Pose2d> poses, Translation2d... points)
   {
-    // Elastic only displays a trajectory for objects with 8+ poses, so we generate a bunch of intermediate poses to force it
+    for (var point : points) 
+      poses.add(new Pose2d(point, Rotation2d.kZero));
 
-    double length = start.getTranslation().getDistance(end.getTranslation());
-
-    double sectionLength = length / 8;
-    var poses = IntStream
-      .range(0, 9)
-      .boxed()
-      .map(section -> start.interpolate(end, sectionLength * section))
-      .toList();
-
-    FIELD.getObject(name).setPoses(poses);
+    // Repeat the last point so that there's at least 9 total poses.
+    for (int i = poses.size(); i < 9; i++)
+      poses.add(new Pose2d(points[points.length - 1], Rotation2d.kZero));
   }
 
   public static void trailFieldObject(String name, Pose2d newPose)
@@ -127,14 +130,14 @@ public class PBDash
     var object = FIELD.getObject(name);
     var poses = object.getPoses();
     // Elastic only displays a trajectory for objects with 8+ poses, so we add the first pose a bunch of times to force it
-    for (int i = 0; i < (50 - poses.size()); i++) poses.add(newPose);
+    for (int i = poses.size(); i < 9; i++) poses.add(newPose);
     poses.add(newPose);
     poses.remove(0);
     object.setPoses(poses);
   }
 
   public static void removeFieldObject(String name)
-    {FIELD.getObject(name).setPoses();}
+    { FIELD.getObject(name).setPoses(); }
 
   /**
    * Publishes a Sendable to the table {@value IDConstants#dashTableName} <p>

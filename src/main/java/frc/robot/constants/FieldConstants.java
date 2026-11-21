@@ -375,7 +375,8 @@ public class FieldConstants
       fieldStaticGeoFence, 
       fieldBlueGeoFence, 
       fieldRedGeoFence,
-      climbBarrier
+      climbBarrier,
+      climbTriggerVectors
     ).addPriority(field);
 
     /** Minimum speed limit within a restrictor */
