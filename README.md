@@ -71,7 +71,8 @@ Patterns
 
 # ControlTransmutation #
 JoystickTransmuter
-- 
+- Interface for modifying the output of a joystick
+- Define with supplier for each joystick axis, return is a Translation2d combining both
 
 Brake
 - 
@@ -83,6 +84,9 @@ CrossDeadband
 - 
 
 InputCurve
+- 
+
+Rotation
 - 
 
 GeoFence
