@@ -102,7 +102,9 @@ RumbleRequester
 - Constructs a command that run the rumble request when scheduled and removes the request when finished.
 
 LEDStrip
-- 
+- Controls all LED blocks and manages them
+- Knows all the blocks length
+- Renders the LED blocks and patterns
 
 Vision/Limelight
 - Manages multiple photon or limelight cameras.

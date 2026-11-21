@@ -25,7 +25,7 @@ public class RumbleRequester extends SubsystemBase
   /**
    * Creates a RumbleRequester, for managing a controller's rumble 
    * @param controller the controller to manage the rumble of
-   * @param side which side of the controller this subsystem maanages
+   * @param side which side of the controller this subsystem manages
    * @param strengthSup the supplier that is used to get the rumble strength each time it starts rumbling
    */
   public RumbleRequester(CommandXboxController controller, RumbleType side, Supplier<Double> strengthSup)
