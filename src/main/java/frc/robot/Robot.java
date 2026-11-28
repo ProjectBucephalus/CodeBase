@@ -304,15 +304,19 @@ public class Robot extends TimedRobot
   {
     PBDash.DEVICE_ERRORS.init();
     
-    if (!driver.isConnected() || !operator.isConnected()) PBDash.DEVICE_ERRORS.append("Controller, ");
-    if (!(switchboard.button(1)).or(switchboard.button(2)).or(switchboard.button(3)).getAsBoolean()) PBDash.DEVICE_ERRORS.append("Switchboard, ");
+    PBDash.ALERT_DRIVER_CONTROLLER.set(!driver.isConnected());
+    PBDash.ALERT_OPERATOR_CONTROLLER.set(!operator.isConnected());
 
-    if (!s_Swerve.devicesValid()) PBDash.DEVICE_ERRORS.append("Drivebase, ");
-    
-    if (!s_Vision.hasLocalisation()) PBDash.DEVICE_ERRORS.append("Vision, ");
+    PBDash.ALERT_SWITCHBOARD.set(!(switchboard.button(1)).or(switchboard.button(2)).or(switchboard.button(3)).getAsBoolean());
+
+    PBDash.ALERT_DRIVEBASE.set(!s_Swerve.devicesValid());
+
+    PBDash.ALERT_VISION.set(!s_Vision.hasLocalisation());
 
     double batteryVoltage = getBattery();
-    if (batteryVoltage < 12.5) PBDash.DEVICE_ERRORS.append("Battery " + batteryVoltage + "v, ");
+    PBDash.ALERT_BATTERY.set(batteryVoltage < 12.5);
+    if (batteryVoltage < 12.5) 
+      PBDash.ALERT_BATTERY.setText("Battery at " + batteryVoltage + "v");
   }
 
   @Logged(name = "CAN Load")

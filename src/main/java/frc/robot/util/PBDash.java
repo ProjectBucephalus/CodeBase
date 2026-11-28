@@ -17,6 +17,8 @@ import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableRegistry;
+import edu.wpi.first.wpilibj.Alert;
+import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableBuilderImpl;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -34,6 +36,12 @@ public class PBDash
   private static final Map<String, Sendable> tablesToData = new HashMap<>();
 
   // System states
+  public static final Alert ALERT_DRIVER_CONTROLLER = new Alert("Driver controller disconnected", AlertType.kError);
+  public static final Alert ALERT_OPERATOR_CONTROLLER = new Alert("Operator controller disconnected", AlertType.kError);
+  public static final Alert ALERT_SWITCHBOARD = new Alert("Switchboard disconnected", AlertType.kError);
+  public static final Alert ALERT_DRIVEBASE = new Alert("Drivebase device disconnected", AlertType.kError);
+  public static final Alert ALERT_VISION = new Alert("No vision localisation", AlertType.kError);
+  public static final Alert ALERT_BATTERY = new Alert("Battery at _v", AlertType.kWarning);
   public static final Key<String> DEVICE_ERRORS = new Key<>("Device Errors", "");
   public static final Key<String> CLIMBER_STATE = new Key<>("Climber State", "Home");
   public static final Key<String> EXTENSION_STATE = new Key<>("Extension State", "Stowed");
