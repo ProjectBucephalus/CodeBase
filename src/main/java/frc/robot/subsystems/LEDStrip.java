@@ -4,6 +4,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj.AddressableLED;
 import edu.wpi.first.wpilibj.AddressableLEDBuffer;
 import frc.robot.leds.Block;
+import frc.robot.util.PBDash;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +15,9 @@ public class LEDStrip extends SubsystemBase
   private final AddressableLEDBuffer buffer;
   private final ArrayList<Block> blocks;
   private final double brightness;
+
+  /** Dashboard address for viewing and adjusting block lengths */
+  private PBDash.Key<int[]> ntAddress = null;
 
   public LEDStrip(int pwmPort, double brightness, int length)
   {
@@ -76,5 +80,25 @@ public class LEDStrip extends SubsystemBase
     }
 
     leds.setData(buffer);
+  }
+
+  /**
+   * Dashboard interface to adjust block lengths to account for damaged LEDs
+   */
+  public void updateBlockLengths()
+  {
+    int[] inputLengths = ntAddress.get();
+    if (inputLengths.length == blocks.size())
+    {
+      for (int i = 0; i < blocks.size(); i++)
+        {blocks.get(i).setLength(inputLengths[i]);}
+    }
+    else
+    {
+      int[] outputLengths = new int[blocks.size()];
+      for (int i = 0; i < blocks.size(); i++)
+        {outputLengths[i] = blocks.get(i).getLength();}
+      ntAddress.put(outputLengths);
+    }
   }
 }

@@ -4,11 +4,12 @@ import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj.AddressableLEDBuffer;
 import edu.wpi.first.wpilibj.LEDPattern;
 import frc.robot.leds.patterns.*;
+import frc.robot.util.Conversions;
 import frc.robot.util.PBDash;
 
 public class Block
 {
-  public final int length;
+  public int length;
 
   private LEDPattern pattern;
 
@@ -23,7 +24,7 @@ public class Block
    */
   public Block(int length, LEDPattern pattern)
   {
-    this.length = length;
+    this.length = Math.abs(length);
     this.pattern = pattern;
   }
 
@@ -99,4 +100,18 @@ public class Block
         );
     }
   }
+
+  /**
+   * Updates the length of the block. </p>
+   * Intended as a short-term fix to account for damaged LEDs in the strip, not for typical use.
+   * @param newLength Input length of LED Block [0..]
+   */
+  public void setLength(int newLength)
+  {
+    length = Math.abs(newLength);
+  }
+
+  /** Returns the number of LEDs in the block */
+  public int getLength()
+    {return length;}
 }

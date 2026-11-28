@@ -168,10 +168,10 @@ List of available classes and brief descriptions of their functions
 - Constructs a command that run the rumble request when scheduled and removes the request when finished.
 
 ### LEDStrip
-- TODO: Add dashboard interface to adjust block lengths
 - Owns all LED blocks and manages them.
 - Renders the LED blocks and patterns.
-- Knows all the LED block's length.
+- Knows all the LED block lengths.
+- Has dashboard interface to adjust block lengths.
 
 ### Vision/Limelight
 - Manages multiple photon or limelight cameras.
