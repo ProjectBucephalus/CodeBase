@@ -302,8 +302,6 @@ public class Robot extends TimedRobot
 
   private void checkDevices()
   {
-    PBDash.DEVICE_ERRORS.init();
-    
     PBDash.ALERT_DRIVER_CONTROLLER.set(!driver.isConnected());
     PBDash.ALERT_OPERATOR_CONTROLLER.set(!operator.isConnected());
 

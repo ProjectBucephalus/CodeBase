@@ -42,7 +42,6 @@ public class PBDash
   public static final Alert ALERT_DRIVEBASE = new Alert("Drivebase device disconnected", AlertType.kError);
   public static final Alert ALERT_VISION = new Alert("No vision localisation", AlertType.kError);
   public static final Alert ALERT_BATTERY = new Alert("Battery at _v", AlertType.kWarning);
-  public static final Key<String> DEVICE_ERRORS = new Key<>("Device Errors", "");
   public static final Key<String> CLIMBER_STATE = new Key<>("Climber State", "Home");
   public static final Key<String> EXTENSION_STATE = new Key<>("Extension State", "Stowed");
 
