@@ -39,7 +39,7 @@ public class LinearExtension extends LimitedMotor
   @Override
   @Logged(name = "Position Meters")
   public double getPosition()
-    {return super.getAngle() * metersPerRotation;}
+    {return super.getPosition() * metersPerRotation;}
 
   /**
    * Sets the target point for the extension 

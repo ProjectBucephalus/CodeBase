@@ -21,28 +21,16 @@ public class BinaryMotor extends SubsystemBase
    * @param defaultSpeed the duty-cycle speed to run at when on [-1..1]
    * @param id the id of the motor
    */
-  public BinaryMotor(int id, double defaultSpeed) 
+  public BinaryMotor(int id, double defaultSpeed, TalonFXConfiguration config) 
   {
     this.defaultSpeed = defaultSpeed;
     m_Binary = new TalonFX(id);
+    m_Binary.getConfigurator().apply(config);
   }
 
   public double getSpeed()
   {
     return m_Binary.getVelocity().getValueAsDouble();
-  }
-
-  public BinaryMotor(int id, double defaultSpeed, TalonFXConfiguration config) 
-  {
-    this.defaultSpeed = defaultSpeed;
-    m_Binary = new TalonFX(id);
-    applyConfig(config);
-  }
-
-  public BinaryMotor applyConfig(TalonFXConfiguration config) 
-  {
-    m_Binary.getConfigurator().apply(config);
-    return this;
   }
 
   /**

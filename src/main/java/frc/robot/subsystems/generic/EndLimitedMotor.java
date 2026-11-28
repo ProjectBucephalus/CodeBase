@@ -111,9 +111,9 @@ public class EndLimitedMotor extends LimitedMotor
         // If sensor is at endstop, stop
         if 
         (
-          (homeAtMin && request.Position <= getAngle())
+          (homeAtMin && request.Position <= getPosition())
           ||
-          (!homeAtMin && request.Position >= getAngle())
+          (!homeAtMin && request.Position >= getPosition())
         ) stop();
       }
       else // if not at limit

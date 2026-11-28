@@ -11,6 +11,7 @@ import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.util.Conversions;
 
 /** 
@@ -18,7 +19,7 @@ import frc.robot.util.Conversions;
  * @author 5985
  */
 @Logged(strategy = Strategy.OPT_IN)
-public class LimitedMotor extends PositionMotor
+public class LimitedMotor extends Motor
 {
   @Logged
   private final Limit limit;
@@ -93,10 +94,10 @@ public class LimitedMotor extends PositionMotor
     {return limit.atLimit();}
 
   public boolean atMax()
-    {return MathUtil.isNear(maxRotations, getAngle(), tolerance);}
+    {return MathUtil.isNear(maxRotations, getPosition(), tolerance);}
 
   public boolean atMin()
-    {return MathUtil.isNear(minRotations, getAngle(), tolerance);}
+    {return MathUtil.isNear(minRotations, getPosition(), tolerance);}
 
   /**
    * Sets the target point for the motor 
@@ -144,7 +145,7 @@ public class LimitedMotor extends PositionMotor
         calibrated 
       ) 
       //sets the target to the current position + shift (clamped between min and max rotations)
-        baseSetTarget(Conversions.clamp(getAngle() + shiftSup.getAsDouble(), minRotations, maxRotations));
+        baseSetTarget(Conversions.clamp(getPosition() + shiftSup.getAsDouble(), minRotations, maxRotations));
     }
   );}
 
@@ -233,14 +234,14 @@ public class LimitedMotor extends PositionMotor
 
     @Override
     public boolean atLimit() 
-      {return Math.abs(m_Position.getTorqueCurrent().getValueAsDouble()) >= stallCurrent;}
+      {return Math.abs(m_Motor.getTorqueCurrent().getValueAsDouble()) >= stallCurrent;}
   }
 
   private class SimLimit implements Limit 
   {
     @Override
     public boolean atLimit() 
-      {return getAngle() <= homeRotations;}
+      {return getPosition() <= homeRotations;}
   }
 }
 

@@ -3,33 +3,58 @@ package frc.robot.subsystems.generic;
 import java.util.function.DoubleSupplier;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Strategy;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.Units;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
+
+/*
+ * void setTarget(double)
+ * void setVelocity(double)
+ * void setPower(double)
+ * 
+ * void stop()
+ * 
+ * Command setTargetCmd(DoubleSupplier)
+ * Command gotoTargetCmd(DoubleSupplier) // waits for it to reach the target
+ * Command adjustTargetCmd(DoubleSupplier) // continuously adjusts the target point
+ * 
+ * Command setSpeedCmd(DoubleSupplier)
+ * Command runCmd(DoubleSupplier) // sets speed and stops when the command ends
+ * Command setPowerCmd(DoubleSupplier)
+ */
+
 /** 
- * A subsystem wrapped around a TalonFX to provide a simple subsystem for controlling a motor with mechanism ratio
+ * A subsystem wrapped around a TalonFX to provide a simple interface for controlling a motor with mechanism ratio
  * @author 5985
  */
 @Logged(strategy = Strategy.OPT_IN)
 public class Motor extends SubsystemBase 
 {
+  enum ControlType { Position, Velocity }
+
   protected final TalonFX m_Motor;
 
   protected final MotionMagicVoltage positionRequest = new MotionMagicVoltage(0);
   protected final MotionMagicVelocityVoltage velocityRequest = new MotionMagicVelocityVoltage(0);
-  
-  protected boolean active = false;
+  protected final DutyCycleOut powerRequest = new DutyCycleOut(0);
+
+  private ControlType lastControlType;
   
   private final DCMotorSim motorSim;
   private final double motorGearRatio;
@@ -43,15 +68,31 @@ public class Motor extends SubsystemBase
   public Motor(int id, TalonFXConfiguration config) 
   {
     m_Motor = new TalonFX(id);
-    m_Motor.getConfigurator().apply(config);
 
-    motorGearRatio = config.Feedback.SensorToMechanismRatio;
+    motorGearRatio = config.Feedback.SensorToMechanismRatio * config.Feedback.RotorToSensorRatio;
     motorSim = new DCMotorSim
     (
-      LinearSystemId.createDCMotorSystem
-        (DCMotor.getKrakenX60(1), 0.01, config.Feedback.SensorToMechanismRatio),
+      LinearSystemId.createDCMotorSystem(DCMotor.getKrakenX60(1), 0.1, motorGearRatio),
       DCMotor.getKrakenX60(1)
     );
+
+    if (RobotBase.isSimulation())
+    {
+      config = config.clone();
+      config.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
+    }
+
+    m_Motor.getConfigurator().apply(config);
+  }
+
+  /**
+   * Sets the target point for the motor 
+   * @param target position in mechanism rotations
+   */
+  public void setTarget(double pos)
+  {
+    lastControlType = ControlType.Position;
+    m_Motor.setControl(positionRequest.withPosition(pos));
   }
 
   /**
@@ -60,7 +101,61 @@ public class Motor extends SubsystemBase
    * @param speed the desired speed, in mechanism rotations per second
    */
   public void setSpeed(double speed)
-    {m_Motor.setControl(velocityRequest.withVelocity(speed));}
+  {
+    lastControlType = ControlType.Velocity;
+    m_Motor.setControl(velocityRequest.withVelocity(speed));
+  }
+
+  /** 
+   * Set the power of the motor, as a percentage of the motor's supply voltage.
+   * 
+   * @param power the power
+   */
+  public void setPower(double power)
+  {       
+    if (power == 0.0)
+    {
+      switch (lastControlType)
+      {
+        case Position -> m_Motor.setControl(positionRequest.withPosition(getPosition()));
+        case Velocity -> m_Motor.setControl(velocityRequest.withVelocity(0.0));
+      }
+    }
+    else 
+    {
+      m_Motor.setControl(powerRequest.withOutput(power));
+    }
+  }
+
+  /** Stops the motor */
+  public void stop()
+    {m_Motor.set(0);}
+
+  /**
+   * Creates a command to set the target point for the motor when scheduled <p>
+   * @param targetSup mechanism rotations, supply a target position
+   * @return the Command that sets the target once
+   */
+  public Command setTargetCmd(DoubleSupplier targetSup)
+    {return runOnce(() -> setTarget(targetSup.getAsDouble()));}
+
+  /**
+   * Creates a command to set the target point for the motor and wait until we reach that target point <p>
+   * @param targetSup mechanism rotations
+   * @return the Command
+   */
+  public Command gotoTargetCmd(DoubleSupplier targetSup)
+    {return setTargetCmd(targetSup).andThen(Commands.waitUntil(this::atTarget));}
+
+  /**
+   * Creates a command to continuously adjust the target point of the motor by a dynamic amount <p>
+   * Primarily intended for joystick control
+   * @param shiftSup A supplier for the amount to adjust the target by in mechanism rotations
+   * @return the Command
+   */
+  public Command adjustTargetCmd(DoubleSupplier shiftSup) 
+    {return run(() -> {if (shiftSup.getAsDouble() != 0) setTarget(getPosition() + shiftSup.getAsDouble());});}
+  
 
   /**
    * Construct a command that sets the speed of the motor <p>
@@ -74,14 +169,40 @@ public class Motor extends SubsystemBase
   public Command runCmd(DoubleSupplier speedSup)
     {return runEnd(() -> setSpeed(speedSup.getAsDouble()), () -> setSpeed(0));}
 
+  /** 
+   * Set the power of the motor, as a percentage of the motor's supply voltage.
+   * 
+   * @param power the power
+   */
+  public Command setPowerCmd(DoubleSupplier powerSup)
+    {return runOnce(() -> setPower(powerSup.getAsDouble()));}
+  
+  /** @return Current position of the motor, in mechanism rotations */
+  @Logged(name = "position Rotations")
+  public double getPosition() 
+    {return m_Motor.getPosition().getValue().in(Units.Rotations);}
+
+  /** @return Current target position of the motor, in mechanism rotations */
+  @Logged(name = "target Rotations")
+  public double getTarget() 
+    {return positionRequest.Position;}
+
   /** @return Current speed of the motor, in mechanism rotations per second */
   @Logged(name = "speed RevPerSec")
   public double getSpeed() 
     {return m_Motor.getVelocity().getValue().in(Units.RotationsPerSecond);}
 
+  @Logged(name = "power")
+  public double getPower() 
+    {return m_Motor.getClosedLoopOutput().getValue();}
+
   /** @return {@code true} if all CAN devices are connected */
   public boolean devicesValid()
     {return m_Motor.isConnected();}
+
+  /** @return {@code true} when the motor is close to target */
+  public boolean atTarget()
+    {return MathUtil.isNear(getTarget(), getPosition(), 0.1);}
 
   @Override
   public void simulationPeriodic()

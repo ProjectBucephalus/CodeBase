@@ -9,7 +9,7 @@ import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 
-public class BiMotor extends VelocityMotor 
+public class BiMotor extends Motor 
 {
   protected final TalonFX m_Follower;
 
