@@ -1,5 +1,45 @@
 List of available classes and brief descriptions of their functions
 
+# Contents #
+- Util
+  - AlliancePose2d/AllianceTranslation2d
+  - Conversions
+  - FieldUtils
+  - Launchpad
+  - LockableXboxController
+  - MatchTime
+  - PBDash
+- LEDs
+  - Block
+  - Patterns
+- ControlTransmutation
+  - JoystickTransmuter
+  - Brake
+  - Deadband
+  - CrossDeadband
+  - InputCurve
+  - Rotation
+  - GeoFence
+  - TriggerObject
+- Subsystems
+  - CommandSwerveDrivetrain
+  - RumbleRequester
+  - LEDStrip
+  - Vision/Limelight
+  - Generic
+    - BinaryMotor
+    - PositionMotor
+    - EndLimitedMotor
+    - LimitedMotor
+    - LinearExtension
+    - VelocityMotor
+    - BiMotor
+    - SpringMotor
+- AutoBuilder
+  - AutoBuilder
+  - CommandGen
+
+
 # Util #
 ### AlliancePose2d/AllianceTranslation2d
 - Wrapper on base geometry classes. 
