@@ -128,6 +128,7 @@ List of available classes and brief descriptions of their functions
 - Constructs a command that run the rumble request when scheduled and removes the request when finished.
 
 ### LEDStrip
+- TODO: Add dashboard interface to adjust block lengths
 - Owns all LED blocks and manages them.
 - Renders the LED blocks and patterns.
 - Knows all the LED block's length.
@@ -146,6 +147,7 @@ List of available classes and brief descriptions of their functions
 - `runCmd()`/`startCmd()`/`reverseCmd()`/`stopCmd()`/`setSpeedCmd()` return command form of   
 
 ### PositionMotor
+- NOTE: Being merged with VelocityMotor
 - Wrapper around a TalonFX motor for position control using Motion Magic.
 - All positions and targets are measured in mechanicsm rotations.
 - `setTarget()` set the target position; `baseSetTarget()`sends the target directly to the motor, bypassing overridden `setTarget()` method in subclasses.
@@ -173,6 +175,7 @@ List of available classes and brief descriptions of their functions
 - Wrapper around `PositionMotor` converting angles to linear distances with configurable ratio.
 
 ### VelocityMotor
+- NOTE: Being merged with PositionMotor
 - Wrapper around a TalonFX motor for position control using Motion Magic.
 - Controls motor speed in mechanism rotations per second
 - setSpeed() set the target motor velocity
