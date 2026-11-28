@@ -1,48 +1,48 @@
 List of available classes and brief descriptions of their functions
 
 # Util #
-AlliancePose2d/AllianceTranslation2d
+### AlliancePose2d/AllianceTranslation2d
 - Wrapper on base geometry classes. 
 - Input as Blue alliance version, use `blue()` or `red()` to get specific version
 - Use `get()` to get alliance specific version, based on driverstation alliance
 
-Conversions
-- `mod(value, base)` returns mathematical modulus (default `%` operator doesn't handle negative correctly)
+### Conversions
+- `mod(value, base)` returns mathematical modulus (default `%` operator doesn't handle negatives correctly)
 - `wrap(int, min, max)` returns value within endpoints inclusive (default only handles double)
 - `clamp()` allows limits in any order (default needs min, max) with a range of overloads
   - int and double with endpoints
-  - single input double clamps [-1..1]
-  - input Translation2d clamps magnitude [0..1]
+  - double with endpoints clamps to [-1..1]
+  - Translation2d clamps magnitude to [0..1]
 - `round(value, places)` returns `value` rounded to `places` decimal places
-- `buildPose()` creates a new Pose2d from double values in metres and degrees
-- `at[Pose/Translation/Rotation]()` checks if input values are within standard tolerances (under ControlConstants) of each other
-- `near[Pose/Translation/Rotation]()` checks if input values are within input tolerances of eachother
+- `buildPose(x, y, rotation)` creates a new Pose2d from double values in metres and degrees
+- `at[Pose/Translation/Rotation]()` checks if the input values are within standard tolerances (under ControlConstants) of each other
+- `near[Pose/Translation/Rotation]()` checks if the input values are within input tolerances of eachother
 - `normaliseAngle(newAngle, currentAngle, maxAngle)` for turret-style rotation pathing
   - Works for any range of motion. Max angle is symetric, e.g. max=180 -> range=[-180..180]
   - Favours the centre over shortest path if shortest is >135 degrees
 
-FieldUtils
+### FieldUtils
 - `alliance...()` various functions for getting and comparing the current alliance
-- `flip[Pose/Translation]()` mirrors over centreline
-- `rotate[Pose/Translation]()` rotates 180 around field centre
-- `inAllianceZone()` checks if given position is fully within the defined alliance zone
+- `flip[Pose/Translation]()` mirrors the pose/translation across the centreline
+- `rotate[Pose/Translation]()` rotates the pose/translation 180 around the field centre
+- `inAllianceZone()` checks if the robot would be fully within it's alliance zone at the given position
 
-Launchpad
+### Launchpad
 - Interface for launchpad controller
 - Predefined triggers for all buttons, can be used in the same way as normal controller buttons
 - Can set colour to individual buttons, spans of buttons, or use predefined display grids
 
-LockableXboxController
+### LockableXboxController
 - Wrapper on `CommandXboxController` with a configurable button to unlock it with a rumble to confirm.
 - All buttons read false and axes read 0 while controller is locked.
 - Holding the unlock button for 1.5s (configurable) locks the controller again, with a rumble to confirm.
 
-MatchTime
+### MatchTime
 - Time handler to convert ststem time to match time
 - `startAuto()` to calibrate the timing of the Auto period
 - `startTele()` to calibrate the timing of the Teleop period
 
-PBDash
+### PBDash
 - Custom NetworkTables interface with configurable data keys
 - Predefined keys can use any type, and are given a default value
   - Can be globally accessed through a variable rather than by string
@@ -57,20 +57,20 @@ PBDash
   - `trailFieldObject()` renders a line of the last 50 poses given
 
 # LEDs #
-Block
+### Block
 - A defined string of LEDs within the whole strip, defined by length
 - Has no internal reference to its position in the strip. Start position is given when render() is called by the `LEDStrip` subsystem
 - `setNetworkTableAddress(...)` to render first 4 LEDs to network tables
 - Patterns can be applied to multiple blocks simultaneously
 
-Patterns
+### Patterns
 - dummy: no render
 - conditional: takes any two patterns to render based on boolean condition
 - supplied: takes a colour supplier
 - chase: two colours of given lengths, move by one pixel at given frequency. can be used for alternating patterns
 
 # ControlTransmutation #
-JoystickTransmuter
+### JoystickTransmuter
 - Interface for modifying the output of a joystick.
 - Define with supplier for each joystick axis, return is a Translation2d combining both.
 - Takes in all other transmuter layers, and processes them in order:
@@ -80,14 +80,14 @@ JoystickTransmuter
   4. Brake
   5. FieldObjectList
 
-Brake
+### Brake
 - Defined with additional axis (or other supplier) to scale joystick output
 
-Deadband
+### Deadband
 - Clamps joystick value to `0` when below deadband limit.
 - Rescales output to be [0..1] rather than [limit..1]
 
-CrossDeadband
+### CrossDeadband
 - Restricts output to whichever axis is greater, allowing for cardinal movement.
 - Configurable overlap region behaviour:
   - `<1` - Deadband between axis, can only move if stick is close to an axis
@@ -95,57 +95,57 @@ CrossDeadband
   - `=1` - Sharp change, control is only the closest axis
 - Also impliments a regular deadband at the centre.
 
-InputCurve
+### InputCurve
 - Simple power curve applied to joystick value.
 - Power `>1` gives more fine control
 - Power `<1` gives less fine control
 - Output always [-1..1] regardless of power
 
-Rotation
+### Rotation
 - Arbitrarily rotates joystick input.
 - Can be configured to monitor a value from the dashboard.
 
-GeoFence
+### GeoFence
 - Built from videogame collision detection logic, using vision localisation and swerve drive.
 - Efficiently calculates the distance between the robot and the object, and reduces the component of the input in that direction down to 0 when the robot is in contact with it.
 - Various shapes exist with their own processing behaviour.
 - `radius` defines the extent of the object beyond the simple geometry.
 - `buffer` defines the distance from the object where the robot starts to be affected.
 
-TriggerObject
+### TriggerObject
 - Derived from GeoFence objects, primarily checks if the robot is within the area to allow for location-based triggers.
 - Can apply a speed limit within the triggering area.
 - TriggerVector defines a target and approach heading; while driving towards the target, the trigger will activate, and remain active while holding that input.
 
 # Subsystems #
-CommandSwerveDrivetrain
+### CommandSwerveDrivetrain
 - Constructs and handles the CTRE hardware devices
 
-RumbleRequester
+### RumbleRequester
 - Provides a convenient interface for managing a controller's rumble.
 - Each instance manages one side of one controller.
 - Operates on requests: Rumbles while there are any requests, when all requests are removed it stops rumbling.
 - Constructs a command that run the rumble request when scheduled and removes the request when finished.
 
-LEDStrip
+### LEDStrip
 - Owns all LED blocks and manages them.
 - Renders the LED blocks and patterns.
 - Knows all the LED block's length.
 
-Vision/Limelight
+### Vision/Limelight
 - Manages multiple photon or limelight cameras.
 - Removes unwanted or uncertain tags before calculating.
 - Estimates where on the field the robot is.
 - Updates the turret headings.
 
 ## Generic ##
-BinaryMotor
+### BinaryMotor
 - Simplest interface for TalonFX motor
 - Define with default speed: `start()` runs motor at default speed, `stop()` stops motor
 - `setSpeed()` allows any speed to be used, if needed.
 - `runCmd()`/`startCmd()`/`reverseCmd()`/`stopCmd()`/`setSpeedCmd()` return command form of   
 
-PositionMotor
+### PositionMotor
 - Wrapper around a TalonFX motor for position control using Motion Magic.
 - All positions and targets are measured in mechanicsm rotations.
 - `setTarget()` set the target position; `baseSetTarget()`sends the target directly to the motor, bypassing overridden `setTarget()` method in subclasses.
@@ -163,16 +163,16 @@ PositionMotor
   - simulationPeriodic() updated the simulated motor position every simulation cycle.
   - Feeds simulated position back to the TalonFX motor.
 
-EndLimitedMotor
+### EndLimitedMotor
 - A motor with limited range, with an endstop sensor at one end of travel.
 
-LimitedMotor
+### LimitedMotor
 - Same as `EndLimitedMotor`, except the sensor can be anywhere along the range of travel.
 
-LinearExtension
+### LinearExtension
 - Wrapper around `PositionMotor` converting angles to linear distances with configurable ratio.
 
-VelocityMotor
+### VelocityMotor
 - Wrapper around a TalonFX motor for position control using Motion Magic.
 - Controls motor speed in mechanism rotations per second
 - setSpeed() set the target motor velocity
@@ -185,15 +185,15 @@ VelocityMotor
   - simulationPeriodic() updated the simulated motor velocity every simulation cycle.
   - Feeds simulated velocity back to the TalonFX motor.
 
-BiMotor
+### BiMotor
 - Extend VelocityMotor to control two TalonFX motors together.
 - Use a leader-follower configuration, where the second motor follow the first.
-- Constructor accepts seperate CAN IDs fro the leader and the follower, a shared configuration, and flipped option.
+- Constructor accepts seperate CAN IDs for the leader and the follower, a shared configuration, and flipped option.
 - The flipped option determines whether the follower runs aligned with or opposed to the leader.
 - Inherits velocity controls methods and commands from VelocityMotor.
 - Overrides devicesValid() to check that both motors are connected. 
 
-SpringMotor
+### SpringMotor
 - Wrapper around a TalonFX motor for position control using two different Motion Magic configuration slots.
 - setTarget() stores the desired target position in mechamism rotations.
 - setTargetCmd() sets the target once, accepting etheir fixed value or a DoubleSupplier.
@@ -203,10 +203,10 @@ SpringMotor
   - Slot 0
 
 # AutoBuilder #
-AutoBuilder
+### AutoBuilder
 - Takes text input from dashboard and converts it into a chain of tokens which are then parsed to generate an auto command
 
-CommandGen
+### CommandGen
 - Contains the code to generate commands from input tokens
 - Check TODO marks in ParsedRepr.java to add new instruction options to the list
 - Check TODO marks in CommandGen.java to impliment new instruction options
